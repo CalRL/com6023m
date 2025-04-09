@@ -1,5 +1,5 @@
 import database from "../config/database";
-import {User} from "../models/user.model.js";
+import {User} from "../models/UserModel.js";
 
 export default class UserWrapper {
     private userId: number;

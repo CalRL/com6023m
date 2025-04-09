@@ -1,24 +1,31 @@
 import { Request, Response } from 'express';
 import { profileService } from '../services/ProfileService';
-import { hasPermission, Permission } from '../User/Permissions';
-import UserWrapper from "../User/UserWrapper.js";
+import { Permissions } from '../User/Permissions';
+import UserWrapper from "../User/UserWrapper";
+import {ProfileDTO} from "../models/profile.model.js";
+import permissionsService from "../services/PermissionsService.js";
+import {PermissionsDTO} from "../models/PermissionModel.js";
 
 export async function getProfile(req: Request, res: Response) {
     try {
-        const userId = req.user.id;
-        const permissions = req.user.permissions;
-        const user = new UserWrapper(userId);
-        // Check permission
-        if (await user.hasPermission(permissions, Permissions.SELF_READ)) {
-            return res.status(403).json({ message: 'Permission denied' });
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ message: 'Unauthorized: No valid token found' });
         }
+        const userId: number = req.user.id;
 
-        const profile = await profileService.getProfileById(userId);
-        if (!profile) {
+        // const permissionsDTO: PermissionsDTO  = await permissionsService.getPermissions(userId);
+        // const permissions: string[] = permissionsDTO.permissions
+        // if(!permissions || !permissions.includes("SELF_READ")) {
+        //     return res.status(403).json({ message: 'Permission denied' });
+        // }
+
+        const profileDTO: ProfileDTO = await profileService.getProfileById(userId);
+        if (!profileDTO) {
             return res.status(404).json({ message: 'Profile not found' });
         }
 
-        return res.status(200).json(profile);
+        console.log("getProfile Output: " + JSON.stringify(profileDTO));
+        return res.status(200).json(profileDTO);
     } catch (error: any) {
         console.error('Error fetching profile:', error.message);
         return res.status(500).json({ message: 'Error fetching profile' });

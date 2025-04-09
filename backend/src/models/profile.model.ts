@@ -6,9 +6,10 @@ export interface Profile {
 }
 
 export interface ProfileDTO{
-    displayName: String;
+    id: number;
+    displayName: string;
     avatarUrl?: string;
-    location?: String;
+    location?: string;
 }
 
 /*

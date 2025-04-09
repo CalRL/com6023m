@@ -10,8 +10,9 @@ export function authenticateToken(token?: string): boolean {
 
     try {
         const decoded = verifyToken(token);
-        return !!decoded;
+        return decoded;
     } catch (error) {
+        console.error('Error verifying token:', error);
         return false;
     }
 }

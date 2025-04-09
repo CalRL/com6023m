@@ -1,13 +1,11 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import "./App.css";
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import useAuthStore from './store/auth';
 import LoginForm from './components/LoginForm';
 import AuthWrapper from './components/AuthWrapper';
+import axios from "./api/axios.ts";
 
-const Profile: React.FC = () => {
-    const { user } = useAuthStore();
-    return <div>Welcome, {user?.email || 'Guest'}!</div>;
-};
 
 const App: React.FC = () => {
     const initializeAuth = useAuthStore((state) => state.initializeAuth);
@@ -17,8 +15,7 @@ const App: React.FC = () => {
     }, [initializeAuth]);
 
     return (
-        <div>
-            <div>hi</div>
+        <div className="mx-auto flex">
             <Router>
                 <div>
                     <h1>React Vite App</h1>

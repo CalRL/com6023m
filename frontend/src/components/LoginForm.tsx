@@ -12,8 +12,21 @@ const LoginForm: React.FC = () => {
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await axios.post('/auth/login', { email, password });
-            login(response.data.token);
+            const response = await axios.post('/auth/login', { email, password }, { withCredentials: true });
+
+            console.log(response);
+
+            if (!response || !response.data) {
+                throw new Error('No response from server');
+            }
+
+            const accessToken = response.data.accessToken;
+            if (!accessToken) {
+                throw new Error('Access token not received');
+            }
+
+            login(accessToken);
+
             alert('Login successful!');
             navigate('/profile');
         } catch (error) {

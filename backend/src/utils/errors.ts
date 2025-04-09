@@ -19,3 +19,12 @@ export class ServerError extends Error {
         this.cause = cause;
     }
 }
+
+/**
+ * todo: make error return a consistent json:
+ * {
+ *     "error": {
+ *         "message":"error message here"
+ *     }
+ * }
+ */

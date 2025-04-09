@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { userService } from '../services/UserService';
 import { hashPassword } from "../utils/PasswordUtils";
+import {UserDTO} from "../models/UserModel.js";
 
 /**
  * Create a new user with email, username, and password.
@@ -13,7 +14,7 @@ export const createUser = async (req: Request, res: Response): Promise<Response>
       return res.status(400).json({ error: 'Email, username, and password are required' });
     }
 
-    const user = await userService.createUser(email, password);
+    const user: UserDTO = await userService.createUser(email, password);
     return res.status(201).json({ message: 'User created successfully', user });
   } catch (error) {
     console.error('Error creating user:', error);
@@ -39,6 +40,7 @@ export const getUserById = async (req: Request, res: Response): Promise<Response
 
 export const getAllUsers = async (_req: Request, res: Response): Promise<Response> => {
   try {
+
     const users = await userService.findAll();
     return res.status(200).json(users);
   } catch (error) {
@@ -47,10 +49,23 @@ export const getAllUsers = async (_req: Request, res: Response): Promise<Respons
   }
 };
 
+
+export const getUserByEmail = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const user: UserDTO = await userService.findByEmail(res.email)
+    return res.status(200).json(user);
+  } catch (error) {
+    console.error('Error retrieving user:', error);
+    return res.status(500).json({ error: 'Error retrieving user' });
+  }
+}
+
 export const updateUser = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { id } = req.params;
     const { email, username } = req.body;
+
+    const user: UserDTO = req.body;
 
     const updatedUser = await userService.update(parseInt(id), { email, username });
 
