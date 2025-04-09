@@ -4,6 +4,6 @@ export interface Permissions {
 }
 
 export interface PermissionsDTO {
-    user_id: number;
-    permissions: string[];
+    user_id?: number;
+    permissions?: string[];
 }

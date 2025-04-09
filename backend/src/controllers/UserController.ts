@@ -2,8 +2,12 @@ import {userService} from "../services/UserService.js";
 import {UserDTO} from "../models/UserModel.js";
 import permissionsService from "../services/PermissionsService.js";
 import {fromToken} from "../middleware/AuthMiddleware.js";
+import { User } from "../models/UserModel.js";
+import { Request, Response } from "express";
+
+
 class UserController {
-    async createUser(req: Request, res: Response): Promise<User> {
+    async createUser(req: Request, res: Response): Promise<Response>  {
         try {
             const { email, password } = req.body;
 
@@ -41,17 +45,19 @@ class UserController {
      * @param req
      * @param res
      */
-    async updateUser(req: Request, res: Response) {
+    async updateUser(req: Request, res: Response): Promise<Response> {
         try {
             const { id } = req.params;
             const user: UserDTO = req.body;
             console.log("User: " + JSON.stringify(user))
 
+            const parsedId = parseInt(id);
+
             if(!user) {
                 return res.status(422).json({ error: 'User format invalid' });
             }
 
-            const updatedUser = await userService.update(id, user)
+            const updatedUser = await userService.update(parsedId, user)
 
             if (!updatedUser) {
                 return res.status(404).json({ error: 'User not found' });
@@ -70,16 +76,18 @@ class UserController {
      * @param req
      * @param res
      */
-    async deleteUser(req: Request, res: Response) {
+    async deleteUser(req: Request, res: Response): Promise<Response> {
         try {
             const { id } = req.params
+            const parsedId: number = parseInt(id);
 
-            const success = await userService.deleteById(id);
+            const success = await userService.deleteById(parsedId);
+
             if(success === false) {
                 throw new Error(`UserService couldn't delete ${id}`);
             }
 
-            res.status(200).json({ message: 'Success'})
+            return res.status(200).json({ message: 'Success'})
 
         } catch(error) {
             console.error("Error deleting user: ", error);
@@ -94,7 +102,7 @@ class UserController {
      */
     async deleteUserById(id: number) {}
 
-    async getAllUsers(req: Request, res: Response) {
+    async getAllUsers(req: Request, res: Response): Promise<Response> {
         try {
             //todo: get permission
             const user = await fromToken(req);
@@ -119,7 +127,7 @@ class UserController {
             return res.status(500).json({ error: "Error getting users"});
         }
     }
-    async getUserById(req: Request, res: Response) {
+    async getUserById(req: Request, res: Response): Promise<Response> {
         return res.status(404).json({ message: 'Resource not found' });
     }
     async getUserByEmail() {}

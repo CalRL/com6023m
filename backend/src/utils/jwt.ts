@@ -1,4 +1,6 @@
+// @ts-ignore
 import jwt from 'jsonwebtoken';
+import {DecodedToken} from "./authenticate.js";
 
 const secret = process.env.JWT_SECRET;
 const accessExpiresIn = process.env.JWT_ACCESS_EXPIRES_IN || '15m';
@@ -29,7 +31,8 @@ export function generateRefreshToken(payload: object): string {
  */
 export function verifyToken(token: string): object | null {
     try {
-        return jwt.verify(token, secret);
+        const decoded = jwt.decode(token);
+        return decoded as DecodedToken;
     } catch (error) {
         return null;
     }

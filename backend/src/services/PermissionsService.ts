@@ -1,7 +1,8 @@
-import {defaultPermissions, Permissions} from "../User/Permissions";
-import {ProfileService} from "./ProfileService";
-import database from "../config/database";
+import {defaultPermissions, Permissions} from "../User/Permissions.js";
+import database from "../config/database.js";
+
 import {PermissionsDTO} from "../models/PermissionModel.js";
+import {permissionsRepository} from "../repository/PermissionsRepository.js";
 class PermissionsService {
     async createDefaultPermissions(userId: number): Promise<void> {
         try {
@@ -24,15 +25,18 @@ class PermissionsService {
     }
 
     //todo: this
-    async getPermissions(userId: number): Promise<PermissionsDTO> {
+    async getPermissions(userId: number): Promise<PermissionsDTO | null> {
         try {
-            const result = await database<PermissionsDTO>`
-            SELECT * FROM permissions WHERE user_id=${userId}
-            `;
-            console.log("Permissions:" + JSON.stringify(result[0]));
-            return result[0] || null;
+
+            const permissions = permissionsRepository.getPermissions(userId);
+
+            if(permissions == null) {
+                throw new Error("Permissions returned null...");
+            }
+
+            return permissions;
         } catch (error) {
-            throw new Error(error.message);
+            throw error;
         }
     }
 
@@ -53,7 +57,11 @@ class PermissionsService {
             if(result.length === 0) return false;
             const permissions = result[0]
 
-            if(permissions.includes(string)) {
+            console.log("Permissions:" + JSON.stringify(permissions));
+            console.log(typeof permissions);
+            console.log("Permissions:" + JSON.stringify(permissions.permissions));
+            const userPermissions = permissions.permissions;
+            if(userPermissions.includes(string)) {
                 console.log('Has Permission');
                 return true;
             }
