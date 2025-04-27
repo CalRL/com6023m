@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import "./App.css";
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import useAuthStore from './store/auth';
 import LoginForm from './components/LoginForm';
 import AuthWrapper from './components/AuthWrapper';
-import axios from "./api/axios.ts";
+import Profile from './components/Profile';
+import RegisterForm from "./components/RegisterForm.tsx";
 
 
 const App: React.FC = () => {
@@ -22,6 +23,7 @@ const App: React.FC = () => {
                     <Routes>
                         <Route path="/" element={<LoginForm />} />
                         <Route path="/login" element={<LoginForm />} />
+                        <Route path="/register" element={<RegisterForm />} />
                         <Route
                             path="/profile"
                             element={

@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from "react";
 import axios from "../api/axios.ts";
-import { ProfileModel } from "./models/ProfileModel.ts"
+import { ProfileModel } from "../models/ProfileModel.js"
+
 
 const Profile: React.FC = () => {
     const [profile, setProfile] = useState<ProfileModel | null>(null);  // To store the profile data
@@ -15,7 +16,7 @@ const Profile: React.FC = () => {
                 setProfile(response.data);
                 setLoading(false);
             } catch (err) {
-                setError("Failed to fetch profile");
+                setError((err as Error).message);
                 setLoading(false);
             }
         };
@@ -37,3 +38,5 @@ const Profile: React.FC = () => {
         </div>
     );
 };
+
+export default Profile;

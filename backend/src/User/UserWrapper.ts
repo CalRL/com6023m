@@ -1,4 +1,4 @@
-import database from "../config/database";
+import database from "../config/database.js";
 import {User} from "../models/UserModel.js";
 
 export default class UserWrapper {
@@ -20,20 +20,19 @@ export default class UserWrapper {
     }
 
 
-    async setFirstName(name: string): Promise<boolean> {}
-    async setLastName(name: string): Promise<boolean> {}
-    async setPhoneExt(ext: number): Promise<boolean> {}
-    async setPhoneNumber(num: number): Promise<boolean> {}
-    async setBirthday(birthday: date): Promise<boolean> {}
-    async setPassword(password: string): Promise<boolean> {
-    }
+    async setFirstName(name: string) {}
+    async setLastName(name: string) {}
+    async setPhoneExt(ext: number) {}
+    async setPhoneNumber(num: number) {}
+    async setBirthday(birthday: Date) {}
+    async setPassword(password: string) {}
 
     async getFirstName() {}
     async getLastName() {}
     async getPhoneNumber() {}
     async getPhoneEct() {}
     async getBirthday() {}
-    async getPassword(): Promise<boolean> {}
+    async getPassword(){}
 
     async addPermission(permission: string): Promise<void> {}
     async removePermission(permission: string): Promise<boolean> {}

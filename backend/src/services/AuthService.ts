@@ -1,6 +1,6 @@
-import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
-import { userService } from './UserService';
-import { verifyPassword } from '../utils/PasswordUtils';
+import { generateAccessToken, generateRefreshToken } from '../utils/jwt.js';
+import { userService } from './UserService.js';
+import { verifyPassword } from '../utils/PasswordUtils.js';
 import {UserDTO} from "../models/UserModel.js";
 
 class AuthService {

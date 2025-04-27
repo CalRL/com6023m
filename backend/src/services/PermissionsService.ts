@@ -3,7 +3,9 @@ import database from "../config/database.js";
 
 import {PermissionsDTO} from "../models/PermissionModel.js";
 import {permissionsRepository} from "../repository/PermissionsRepository.js";
+import {debugMode} from "../utils/DebugMode.js";
 class PermissionsService {
+    //TODO: create Permissions Repository
     async createDefaultPermissions(userId: number): Promise<void> {
         try {
             await database`
@@ -57,14 +59,15 @@ class PermissionsService {
             if(result.length === 0) return false;
             const permissions = result[0]
 
-            console.log("Permissions:" + JSON.stringify(permissions));
+
             console.log(typeof permissions);
-            console.log("Permissions:" + JSON.stringify(permissions.permissions));
+            // debugMode.log("Permissions: " + JSON.stringify(permissions.permissions));
             const userPermissions = permissions.permissions;
             if(userPermissions.includes(string)) {
-                console.log('Has Permission');
+                debugMode.log(`PermissionsService: hasPermission: '${string}' true`);
                 return true;
             }
+            debugMode.log(`PermissionsService: hasPermission: '${string}' false`);
             return false;
 
         } catch (error) {

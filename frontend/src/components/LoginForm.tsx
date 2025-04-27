@@ -27,23 +27,27 @@ const LoginForm: React.FC = () => {
 
             login(accessToken);
 
-            alert('Login successful!');
+
             navigate('/profile');
         } catch (error) {
             console.error(error);
             alert('Login failed. Please check your credentials.');
         }
     };
-
+    const boxClass = "block w-full border-neutral-500 p-2 mb-4 border rounded"
     return (
-        <form onSubmit={handleLogin} className="p-4 bg-gray-100 rounded">
-            <h2 className="text-xl mb-4">Login</h2>
+        <form onSubmit={handleLogin} className="p-4 bg-neutral-800 rounded-xl mt-8">
+            <div className="mb-4 space-y-0 text-left">
+                <h2 className="text-2xl ">Sign in</h2>
+                <div>or <a href="/register">create an account</a></div>
+            </div>
+
             <input
                 type="email"
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="block w-full p-2 mb-2 border rounded"
+                className={boxClass}
                 required
             />
             <input
@@ -51,7 +55,7 @@ const LoginForm: React.FC = () => {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="block w-full p-2 mb-4 border rounded"
+                className={boxClass}
                 required
             />
             <button

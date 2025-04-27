@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { authService } from '../services/AuthService';
+import { authService } from '../services/AuthService.js';
 
 /**
  * Handles user registration.

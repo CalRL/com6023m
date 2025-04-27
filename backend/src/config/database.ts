@@ -25,3 +25,5 @@ const database = postgres(dbUrl, {
 });
 
 export default database;
+export {postgres};
+

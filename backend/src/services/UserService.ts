@@ -1,11 +1,13 @@
-import database from '../config/database';
+import database, { postgres } from '../config/database.js';
 import { User, UserDTO } from '../models/UserModel.js';
-import { defaultPermissions } from "../User/Permissions";
-import { profileService } from "./ProfileService";
-import PermissionsService from "./PermissionsService";
-import {usernameFromEmail} from "../utils/UserUtils";
+import { defaultPermissions } from "../User/Permissions.js";
+import { profileService } from "./ProfileService.js";
+import PermissionsService from "./PermissionsService.js";
+import {usernameFromEmail} from "../utils/UserUtils.js";
 import {hashPassword} from "../utils/PasswordUtils.js";
 import { userRepository } from "../repository/UserRepository.js";
+import {ProfileDTO} from "../models/profile.model.js";
+import {debugMode} from "../utils/DebugMode.js";
 
 /**
  * UserService class for managing user operations.
@@ -28,7 +30,7 @@ export class UserService {
    * @returns {Promise<User>} - The newly created user.
    * @throws {Error} - If the user creation fails.
    */
-  async createUser(email: string, password: string): Promise<User> {
+  async createUser(email: string, password: string): Promise<UserDTO> {
     try {
       /**
        * todo: find a better way to do this
@@ -94,7 +96,7 @@ export class UserService {
           throw new Error('User creation failed');
         }
       }
-    }
+  }
   }
 
   /**
@@ -145,14 +147,141 @@ export class UserService {
     try {
       return await userRepository.deleteById(id);
     } catch (error) {
-      throw new Error(error)
+      throw new Error((error as Error).message)
     }
   }
 
-  async findByEmail(email: string): Promise<User | null> {
-    return await userRepository.findByEmail(email);
+  async findByEmail(email: string): Promise<User | undefined> {
+    return await userRepository.findByEmail(email);''
   }
 
+  async getFields(userId: number, fields: Record<string, boolean>) {
+    // Extract field names from the input object
+    const fieldNames = Object.keys(fields);
+    debugMode.log("Fields: " + JSON.stringify(fieldNames));
+
+    // Define disallowed fields
+    const disallowedFields = ['password_hash', 'id'];
+
+    // Validate field names to prevent SQL injection and apply permission checks
+    const validateAndFilterFields = (name: string) => {
+      // Check for disallowed fields
+      if (disallowedFields.includes(name)) {
+        return null;
+      }
+
+      // Validate field name format
+      const validPattern = /^[a-zA-Z0-9_]+$/;
+      if (!validPattern.test(name)) {
+        throw new Error(`Invalid field name: ${name}`);
+      }
+
+      return name;
+    };
+
+    // Safely prepare column names
+    const safeColumns = fieldNames
+        .map(validateAndFilterFields)
+        .filter(field => field !== null);
+
+    // If no fields remain after filtering
+    if (safeColumns.length === 0) {
+      debugMode.log("No safe fields")
+      return null;
+    }
+
+    // Convert array of columns to a comma-separated list for the SQL query
+    const columnsStr = safeColumns.join(', ');
+
+    // Build and execute the query using the database instance
+    const query = database`
+      SELECT ${database.unsafe(columnsStr)}
+      FROM users
+      WHERE id = ${userId}
+    `;
+
+    try {
+      const result = await query;
+      return result[0] || null;
+    } catch(error) {
+      throw error;
+    }
+  }
+
+  async updateFields(userId: number, fields: Record<string, any>) {
+    const disallowedFields = ['password_hash', 'email', 'id'];
+
+    const safeEntries = Object.entries(fields).filter(
+        ([key]) => !disallowedFields.includes(key)
+    );
+
+    if (safeEntries.length === 0) {
+      throw new Error('No valid fields to update');
+    }
+
+    const safeFields = Object.fromEntries(safeEntries);
+    const query = database`
+        UPDATE users SET ${database(safeFields)} WHERE id = ${userId}
+    `;
+
+    const result = await query;
+    return result[0] || null;
+  }
+
+
+  async setFirstName(userId: number, name: string) {
+    await database`UPDATE users SET first_name = ${name} WHERE id = ${userId}`;
+  }
+
+  async setLastName(userId: number, name: string) {
+    await database`UPDATE users SET last_name = ${name} WHERE id = ${userId}`;
+  }
+
+  async setPhoneExt(userId: number, ext: number) {
+    await database`UPDATE users SET phone_ext = ${ext} WHERE id = ${userId}`;
+  }
+
+  async setPhoneNumber(userId: number, num: string) {
+    await database`UPDATE users SET phone_number = ${num} WHERE id = ${userId}`;
+  }
+
+  async setBirthday(userId: number, birthday: Date) {
+    await database`UPDATE users SET birthday = ${birthday} WHERE id = ${userId}`;
+  }
+
+  async setPassword(userId: number, passwordHash: string) {
+    await database`UPDATE users SET password_hash = ${passwordHash} WHERE id = ${userId}`;
+  }
+
+  async getFirstName(userId: number): Promise<string> {
+    const [user] = await database`SELECT first_name FROM users WHERE id = ${userId}`;
+    return user?.first_name ?? 'Not Specified';
+  }
+
+  async getLastName(userId: number): Promise<string> {
+    const [user] = await database`SELECT last_name FROM users WHERE id = ${userId}`;
+    return user?.last_name ?? 'Not Specified';
+  }
+
+  async getPhoneExt(userId: number): Promise<number> {
+    const [user] = await database`SELECT phone_ext FROM users WHERE id = ${userId}`;
+    return user?.phone_ext ?? 0;
+  }
+
+  async getPhoneNumber(userId: number): Promise<string> {
+    const [user] = await database`SELECT phone_number FROM users WHERE id = ${userId}`;
+    return user?.phone_number ?? 'Not Specified';
+  }
+
+  async getBirthday(userId: number): Promise<Date | null> {
+    const [user] = await database`SELECT birthday FROM users WHERE id = ${userId}`;
+    return user?.birthday ?? null;
+  }
+
+  async getPassword(userId: number): Promise<string> {
+    const [user] = await database`SELECT password_hash FROM users WHERE id = ${userId}`;
+    return user?.password_hash;
+  }
 
 }
 

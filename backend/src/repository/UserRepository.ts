@@ -1,5 +1,4 @@
-import database from '../config/database';
-import { sql } from 'postgres';
+import database from '../config/database.js';
 import { User } from '../models/UserModel.js';
 class UserRepository {
     async create(user: Partial<User>): Promise<User> {
@@ -8,12 +7,15 @@ class UserRepository {
 
             console.log("UserRepository: " + JSON.stringify({ email, username, password_hash }));
 
-            const result = await database<User[]>`
+            const result = await database`
                     INSERT INTO users (email, username, password_hash)
                     VALUES (${email}, ${username}, ${password_hash})
                     RETURNING *;
                 `;
-            return result[0] || null;
+
+            const createdUser = result[0] as User;
+            return createdUser;
+
         } catch (error) {
             console.log('UserRepository create error', error);
             throw error;
@@ -53,7 +55,7 @@ class UserRepository {
         }
     }
 
-    async findById(id: Partial<User>): Promise<User> {
+    async findById(id: number): Promise<User> {
         try {
             const result = await database<User[]>`
               SELECT * FROM users WHERE id = ${id};
@@ -65,7 +67,7 @@ class UserRepository {
         }
     }
 
-    async findByEmail(email: string): Promise<User> {
+    async findByEmail(email: string): Promise<User | undefined> {
         try {
             const result = await database<User[]>`
               SELECT * FROM users WHERE email = ${email}
@@ -83,9 +85,10 @@ class UserRepository {
         `;
         return result;
     }
-    async existsUsername(id: string): Promise<boolean> {}
 
-    async exists({ fieldName: fieldContent}): Promise<boolean>
+    async existsUsername(id: string) {}
+
+    async exists() {}
 
     async deleteById(id: number): Promise<boolean> {
         const result = await database`

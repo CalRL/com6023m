@@ -4,6 +4,7 @@ import permissionsService from "../services/PermissionsService.js";
 import {fromToken} from "../middleware/AuthMiddleware.js";
 import { User } from "../models/UserModel.js";
 import { Request, Response } from "express";
+import {debugMode} from "../utils/DebugMode.js";
 
 
 class UserController {
@@ -41,6 +42,7 @@ class UserController {
      * then offload the logic to the UserService.
      *
      * TODO: represent data object with a interface?
+     * TODO: check permissions
      *
      * @param req
      * @param res
@@ -128,11 +130,116 @@ class UserController {
         }
     }
     async getUserById(req: Request, res: Response): Promise<Response> {
+        const JSON = req.body;
+        if(req.body.fields) {
+           const fields = Object.keys(req.body.fields);
+
+           const disallowedFields = ['id', 'password_hash'];
+            if(!Array.isArray(fields) || fields.length === 0) {
+                return res.status(400).json({ error: 'No Fields Provided' });
+            }
+
+            const safeFields = fields.filter(f => disallowedFields.includes(f));
+            if(safeFields.length === 0) {
+                return res.status(400).json({ error: 'No Valid Fields Provided' });
+            }
+        }
         return res.status(404).json({ message: 'Resource not found' });
     }
     async getUserByEmail() {}
 
     async checkPermission() {}
+
+    async getFields(req: Request, res: Response): Promise<Response> {
+        try {
+            const userId = parseInt(req.params.id);
+
+            if (isNaN(userId)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid user ID format'
+                });
+            }
+
+            // Get fields from request body
+            const { fields } = req.body;
+            debugMode.log("Fields:" + JSON.stringify(fields));
+            // Use the UserService to get the fields
+            const userData = await userService.getFields(userId, fields);
+
+            if (!userData) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'User not found'
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                data: userData
+            });
+        } catch (error) {
+            console.error('Error fetching user fields:', error);
+            return res.status(500).json({
+                success: false,
+                message: 'Failed to fetch user fields',
+                error: (error as Error).message
+            });
+        }
+    }
+
+    async updateFields(req: Request, res: Response): Promise<Response> {
+        try {
+            const userId = parseInt(req.params.id);
+
+            if (isNaN(userId)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid user ID format'
+                });
+            }
+
+            const fields = req.body.fields;
+
+            if (!fields || typeof fields !== 'object' || Array.isArray(fields)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid request body'
+                });
+            }
+
+            // Optionally, validate allowed field names here
+            const allowedFields = ['first_name', 'last_name', 'phone_ext', 'phone_number', 'birthday'];
+            const filteredFields: Record<string, any> = {};
+
+            for (const [key, value] of Object.entries(fields)) {
+                if (allowedFields.includes(key)) {
+                    filteredFields[key] = value;
+                }
+            }
+
+            if (Object.keys(filteredFields).length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'No valid fields provided for update'
+                });
+            }
+
+            await userService.updateFields(userId, filteredFields);
+
+            return res.status(200).json({
+                success: true,
+                message: 'User fields updated successfully'
+            });
+        } catch (error) {
+            console.error('Error updating user fields:', error);
+            return res.status(500).json({
+                success: false,
+                message: 'Failed to update user fields',
+                error: (error as Error).message
+            });
+        }
+    }
 }
 
 export const userController = new UserController();

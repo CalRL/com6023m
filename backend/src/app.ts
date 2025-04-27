@@ -1,12 +1,15 @@
-console.log("🔍 app.ts starting up");
+import dotenv from 'dotenv';
 
 import './config/config';
+dotenv.config({ path: "../.env" });
 
 import express, { Application, Request, Response } from 'express';
-import dotenv from 'dotenv';
+
 import userRoutes from './routes/UserRoutes.js';
 import authRoutes from './routes/AuthRoutes.js';
 import profileRoutes from './routes/ProfileRoutes.js';
+import postRoutes from "./routes/PostRoutes.js";
+
 // @ts-ignore
 import cookieParser from 'cookie-parser';
 // @ts-ignore
@@ -16,7 +19,8 @@ import {debugMode} from "./utils/DebugMode.js";
 // THis will run only if DEBUG_MODE is set to true in ENV
 debugMode.log("Running in debug mode!");
 
-dotenv.config({ path: "../.env" });
+console.log("🔍 app.ts starting up");
+
 
 const app: Application = express();
 const PORT = process.env.EXPRESS_PORT;
@@ -59,6 +63,7 @@ app.get('/', (req: Request, res: Response) => {
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/posts', postRoutes);
 
 app.listen(parseInt(PORT), '0.0.0.0', () => {
   console.log(`Server running on http://localhost:${PORT}`);
