@@ -107,12 +107,28 @@ export class UserService {
   async findById(id: number): Promise<User | null> {
     try {
       const result = await database<User[]>`
-              SELECT * FROM users WHERE id = ${id};
-            `;
-      console.log(JSON.stringify(result[0]));
+        SELECT * FROM users WHERE id = ${id};
+      `;
       return result[0] || null;
     } catch (error) {
-      console.error("UserRepository: Error finding user:", error);
+      console.error("UserService: Error finding user:", error);
+      throw error;
+    }
+  }
+
+  async getUsername(id: number) {
+    try {
+      const result = await database`
+        SELECT username FROM users WHERE id = ${id};
+      `
+      if(!result || result.length === 0) {
+        console.error(`User with id ${id} does not exist`);
+        return;
+      }
+
+      return result[0];
+    } catch (error) {
+      console.error("UserService: Error finding user:", error);
       throw error;
     }
   }

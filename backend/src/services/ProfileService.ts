@@ -32,19 +32,10 @@ class ProfileService {
             throw new Error(`Error: ${error}`);
         }
     }
-
-    async getProfileUsername(userId: number): Promise<string> {
-        try {
-            const result = await database`
-            SELECT username FROM users WHERE id = ${userId};
-            `;
-
-            return result[0].username || null;
-        } catch (error) {
-            throw (error as Error);
-        }
-
-    }
+    async getAvatarById(userId: number) {}
+    async getBannerById(userId: number) {}
+    async getLocationById(userId: number) {}
+    async getJoinDateById(userId: number) {}
 }
 
 export const profileService = new ProfileService();

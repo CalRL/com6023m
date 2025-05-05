@@ -114,7 +114,7 @@ class UserController {
             /**
              * handle each diff permission
              */
-            if(user.id == targetId) {
+            if(userId == targetId) {
                 hasPermission = await permissionsService.hasPermission(userId, Permissions.DELETE_SELF);
             } else {
                 if(await permissionsService.hasPermission(userId, Permissions.DELETE_OTHER)) {
