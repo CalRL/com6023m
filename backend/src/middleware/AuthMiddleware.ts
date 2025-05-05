@@ -4,6 +4,7 @@ import {User, UserDTO} from "../models/UserModel.js";
 import { AuthenticatedRequest } from "../utils/interface/AuthenticatedRequest.js";
 import {debugMode} from "../utils/DebugMode.js";
 import {ErrorMessages} from "../utils/errors.js";
+import permissionsService from "../services/PermissionsService.js";
 
 type WithUser = Request & AuthenticatedRequest;
 export function tokenMiddleware(req: Request, res: Response, next: NextFunction) {
@@ -14,15 +15,17 @@ export function tokenMiddleware(req: Request, res: Response, next: NextFunction)
             : req.cookies?.refreshToken;
 
         if (!token) {
-            console.error('No token provided');
-            return res.status(401).json({ message: 'Unauthorized: No token provided' });
+            console.error('Auth: No token provided');
+            res.status(401).json({ message: 'Unauthorized: No token provided' });
+            return;
         }
 
         const decoded = authenticateToken(token);
 
         if (!isDecodedToken(decoded)) {
-            console.error('Invalid or expired token structure');
-            return res.status(403).json({ message: 'Forbidden: Invalid or expired token' });
+            console.error('Auth: Invalid or expired token structure');
+            res.status(403).json({ message: 'Forbidden: Invalid or expired token' });
+            return;
         }
 
         // decoded is now known to be DecodedToken
@@ -31,11 +34,12 @@ export function tokenMiddleware(req: Request, res: Response, next: NextFunction)
             email: decoded.email,
         };
 
-        console.log('tokenMiddleware: User attached to request:', decoded.email);
+        console.log('Auth: User attached to request:', decoded.email);
         next();
     } catch (error) {
-        console.error('Token middleware error:', error);
-        return res.status(500).json({ message: 'Internal server error' });
+        console.error('Auth: Token middleware error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+        return;
     }
 }
 
@@ -101,6 +105,43 @@ class AuthMiddleware {
         console.log('From token: ', JSON.stringify(user));
 
         return user;
+    }
+
+    async adminMiddleware(req: Request, res: Response, next: NextFunction) {
+        const authHeader = req.headers.authorization;
+        const token = authHeader?.startsWith('Bearer ')
+            ? authHeader.split(' ')[1]
+            : req.cookies?.refreshToken;
+
+        if (!token) {
+            console.error('Auth: No token provided');
+            res.status(401).json({ message: 'Unauthorized: No token provided' });
+            return;
+        }
+
+        const decoded = authenticateToken(token);
+
+        if (!isDecodedToken(decoded)) {
+            console.error('Auth: Invalid or expired token structure');
+            res.status(403).json({ message: 'Forbidden: Invalid or expired token' });
+            return;
+        }
+
+        // decoded is now known to be DecodedToken
+        (req as WithUser).user = {
+            id: parseInt(decoded.id),
+            email: decoded.email,
+        };
+
+        const hasPermission = await permissionsService.hasPermission(parseInt(decoded.id), "ADMIN");
+        if(!hasPermission) {
+            console.error(`Auth: User ${decoded.id} does not have ADMIN permission`);
+            res.status(403).json({ message: 'Permission denied' });
+            return;
+        }
+
+        console.log('Auth: Admin attached to request:', decoded.email);
+        next();
     }
 }
 

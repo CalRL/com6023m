@@ -1,11 +1,11 @@
-import database from '../config/database';
+import database from '../config/database.js';
 import { ProfileDTO } from "../models/profile.model.js";
 
 class ProfileService {
     async createProfile(profile: ProfileDTO): Promise<void> {
+        const userId = profile.id
+        const displayName = profile.displayName
         try {
-            const userId = profile.id
-            const displayName = profile.displayName
             await database`
                 INSERT INTO profiles (id, display_name)
                 VALUES (${userId}, ${displayName})
@@ -31,6 +31,19 @@ class ProfileService {
         } catch (error) {
             throw new Error(`Error: ${error}`);
         }
+    }
+
+    async getProfileUsername(userId: number): Promise<string> {
+        try {
+            const result = await database`
+            SELECT username FROM users WHERE id = ${userId};
+            `;
+
+            return result[0].username || null;
+        } catch (error) {
+            throw (error as Error);
+        }
+
     }
 }
 

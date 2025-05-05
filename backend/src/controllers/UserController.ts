@@ -5,12 +5,23 @@ import {fromToken} from "../middleware/AuthMiddleware.js";
 import { User } from "../models/UserModel.js";
 import { Request, Response } from "express";
 import {debugMode} from "../utils/DebugMode.js";
+import { Permissions } from "../User/Permissions.js";
 
 
 class UserController {
+    /**
+     * {
+     *     "user": {
+     *         "email": "",
+     *         "password": ""
+     *     }
+     * }
+     * @param req
+     * @param res
+     */
     async createUser(req: Request, res: Response): Promise<Response>  {
         try {
-            const { email, password } = req.body;
+            const { email, password } = req.body.user;
 
             if (!email || !password) {
                 return res.status(400).json({ error: 'Email, username, and password are required' });
@@ -78,15 +89,51 @@ class UserController {
      * @param req
      * @param res
      */
-    async deleteUser(req: Request, res: Response): Promise<Response> {
+    async deleteUserById(req: Request, res: Response): Promise<Response> {
         try {
             const { id } = req.params
-            const parsedId: number = parseInt(id);
+            const targetId: number = parseInt(id);
 
-            const success = await userService.deleteById(parsedId);
+            const user = await fromToken(req);
+            if(!user) {
+                return res.status(500);
+            }
+            /**
+             * Handle self deletion..
+             */
+            let hasPermission: boolean = false;
+            const userId: number | undefined = user.id;
 
-            if(success === false) {
-                throw new Error(`UserService couldn't delete ${id}`);
+            /**
+             * No user id found
+             */
+            if(!userId) {
+                return res.status(500);
+            }
+
+            /**
+             * handle each diff permission
+             */
+            if(user.id == targetId) {
+                hasPermission = await permissionsService.hasPermission(userId, Permissions.DELETE_SELF);
+            } else {
+                if(await permissionsService.hasPermission(userId, Permissions.DELETE_OTHER)) {
+                    hasPermission = true
+                }
+                if (await permissionsService.hasPermission(userId, Permissions.ADMIN)) {
+                    hasPermission = true
+                }
+            }
+
+            if(!hasPermission) {
+                return res.status(403).json({ message: "Forbidden: Lacking permission"})
+            }
+
+            const success = await userService.deleteById(targetId);
+
+            if(!success) {
+                res.status(500).json({message: `Couldn't delete user with id ${targetId}`});
+                throw new Error(`UserService couldn't delete ${targetId}`);
             }
 
             return res.status(200).json({ message: 'Success'})
@@ -99,10 +146,33 @@ class UserController {
     }
 
     /**
-     * Check if user is admin
-     * @param id
+     * delete self
+     * @param req
+     * @param res
      */
-    async deleteUserById(id: number) {}
+    async deleteUser(req: Request, res: Response): Promise<Response> {
+        const user = await fromToken(req);
+        if(!user) {
+            return res.status(500).json({ error: 'User not found' });
+        }
+
+        const userId = user.id;
+        if(!userId) {
+            return res.status(500).json({ error: 'User object has no ID' });
+        }
+
+        const hasPermission = await permissionsService.hasPermission(userId, Permissions.DELETE_SELF);
+        if(!hasPermission) {
+            return res.status(403).json({ message: "Forbidden: Lacking permission"});
+        }
+
+        const success = await userService.deleteById(userId);
+        if(!success) {
+            return res.status(500);
+        }
+        return res.status(200).json({ message: 'Success'});
+
+    }
 
     async getAllUsers(req: Request, res: Response): Promise<Response> {
         try {
@@ -130,25 +200,56 @@ class UserController {
         }
     }
     async getUserById(req: Request, res: Response): Promise<Response> {
-        const JSON = req.body;
-        if(req.body.fields) {
-           const fields = Object.keys(req.body.fields);
+        const userId = parseInt(req.params.id);
+        const reqUser = await fromToken(req);
 
-           const disallowedFields = ['id', 'password_hash'];
-            if(!Array.isArray(fields) || fields.length === 0) {
-                return res.status(400).json({ error: 'No Fields Provided' });
-            }
-
-            const safeFields = fields.filter(f => disallowedFields.includes(f));
-            if(safeFields.length === 0) {
-                return res.status(400).json({ error: 'No Valid Fields Provided' });
-            }
+        if(reqUser == null || reqUser.id == null) {
+            return res.status(500).json({ error: 'User not found in provided token' });
         }
-        return res.status(404).json({ message: 'Resource not found' });
+
+        const hasPermission = await permissionsService.hasPermission(reqUser.id, "ADMIN");
+
+        if(!hasPermission) {
+            debugMode.log(`User ${userId} does not have permission`);
+            return res.status(403).json({ error: 'Permission Denied' });
+        }
+
+        const user: User | null = await userService.findById(userId);
+        if (!user) {
+            return res.status(500).json({ error: 'User not found' });
+        }
+
+        console.log(`UserController: Found User ${JSON.stringify(user)}`);
+
+        return res.status(200).json({ message: 'User found successfully', user });
     }
     async getUserByEmail() {}
 
     async checkPermission() {}
+
+    async getPermissions(req: Request, res: Response): Promise<Response> {
+        const user = await fromToken(req);
+        if(!user) {
+            return res.status(500).json({ error: 'User not found in provided token'});
+        }
+
+        const userId: number | undefined = user.id;
+        if(!userId) {
+            return res.status(500).json({error: 'No user id found'})
+        }
+
+        let hasPermission: boolean = await permissionsService.hasPermission(userId, Permissions.SELF_READ);
+        if(!hasPermission) {
+            return res.status(403).json({ error: 'Forbidden: Permission Denied' });
+        }
+
+        const permissions = await permissionsService.getPermissions(userId);
+        if(!permissions) {
+            return res.status(500).json({ error: 'User has no permissions?' });
+        }
+
+        return res.status(200).json({ success: true, permissions: permissions });
+    }
 
     async getFields(req: Request, res: Response): Promise<Response> {
         try {

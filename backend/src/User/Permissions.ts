@@ -46,4 +46,5 @@ export const defaultPermissions: string[] = [
     Permissions.CREATE_COMMENT,
     Permissions.LIKE_POST,
     Permissions.LIKE_COMMENT,
+    Permissions.DELETE_SELF
 ];

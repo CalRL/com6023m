@@ -105,7 +105,16 @@ export class UserService {
    * @returns {Promise<User | null>} - The user if found, otherwise null.
    */
   async findById(id: number): Promise<User | null> {
-    return await userRepository.findById(id);
+    try {
+      const result = await database<User[]>`
+              SELECT * FROM users WHERE id = ${id};
+            `;
+      console.log(JSON.stringify(result[0]));
+      return result[0] || null;
+    } catch (error) {
+      console.error("UserRepository: Error finding user:", error);
+      throw error;
+    }
   }
 
   /**

@@ -27,16 +27,16 @@ class PermissionsService {
     }
 
     //todo: this
-    async getPermissions(userId: number): Promise<PermissionsDTO | null> {
+    async getPermissions(userId: number): Promise<unknown> {
         try {
 
-            const permissions = permissionsRepository.getPermissions(userId);
+            const permissions: PermissionsDTO | null = await permissionsRepository.getPermissions(userId);
 
             if(permissions == null) {
                 throw new Error("Permissions returned null...");
             }
-
-            return permissions;
+            console.log(JSON.stringify(permissions.permissions));
+            return permissions.permissions;
         } catch (error) {
             throw error;
         }
