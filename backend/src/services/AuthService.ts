@@ -2,6 +2,12 @@ import { generateAccessToken, generateRefreshToken } from '../utils/jwt.js';
 import { userService } from './UserService.js';
 import { verifyPassword } from '../utils/PasswordUtils.js';
 import {UserDTO} from "../models/UserModel.js";
+import permissionsService from "./PermissionsService.js";
+import { Request, Response } from 'express';
+import {ErrorMessages} from "../utils/errors.js";
+import {authenticateToken} from "../utils/authenticate.js";
+import {isDecodedToken, WithUser} from "../middleware/AuthMiddleware.js";
+import {Permissions} from "../User/Permissions.js";
 
 class AuthService {
     /**
@@ -53,6 +59,84 @@ class AuthService {
             throw new Error(error.message);
         }
     }
+
+    //todo: add res.status()
+    async fromRequest(req: Request, res: Response): Promise<UserDTO> {
+        const authHeader = req.headers.authorization;
+        const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
+
+        if(!token) {
+            res.status(401).json({ message: `Forbidden: ${ErrorMessages.NO_TOKEN}` });
+            console.error('AuthMiddleware: No token provided');
+            throw new Error(`Forbidden: ${ErrorMessages.NO_TOKEN}`);
+        }
+
+        const decoded = authenticateToken(token);
+
+        if (!isDecodedToken(decoded)) {
+            console.error('Invalid or expired token structure');
+            throw new Error(`Forbidden: ${ErrorMessages.INVALID_TOKEN}`);
+        }
+
+        const user: UserDTO = (req as WithUser).user = {
+            id: parseInt(decoded.id)
+        }
+
+        console.log('From token: ', JSON.stringify(user));
+
+        return user;
+    }
+
+    async getTokenType() {}
+
+    async fromAccessToken(req: Request): Promise<UserDTO> {
+        const authHeader = req.headers.authorization;
+        const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
+
+        if (!token) {
+            console.error('No access token provided');
+            throw new Error(`Forbidden: ${ErrorMessages.NO_TOKEN}`);
+        }
+
+        const decoded = authenticateToken(token);
+
+        if (!isDecodedToken(decoded)) {
+            console.error('Invalid or expired access token');
+            throw new Error(`Forbidden: ${ErrorMessages.INVALID_TOKEN}`);
+        }
+
+        return {
+            id: parseInt(decoded.id),
+        };
+    }
+
+
+    /**
+     * Ensures the request attached has the provided permission.
+     * @param req
+     * @param res
+     * @param permission
+     */
+    async ensurePermission(req: Request, res: Response, permission: Permissions) {
+
+        const user = await this.fromRequest(req, res);
+
+        if (!user || typeof user.id !== 'number') {
+            console.error("AuthMiddleware: User ID is undefined or invalid.");
+            res.status(500).json({ error: 'User not authenticated properly.' });
+            return false;
+        }
+
+        const hasPermission = await permissionsService.hasPermission(user.id, permission);
+
+        if (!hasPermission) {
+            res.status(403).json({ error: 'Forbidden' });
+            return false;
+        }
+
+        return true;
+    }
+
 }
 
 export const authService = new AuthService();

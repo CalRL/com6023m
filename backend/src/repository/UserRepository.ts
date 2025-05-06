@@ -1,5 +1,6 @@
 import database from '../config/database.js';
-import { User } from '../models/UserModel.js';
+import {User} from '../models/UserModel.js';
+
 class UserRepository {
     async create(user: Partial<User>): Promise<User> {
         try {
@@ -13,8 +14,7 @@ class UserRepository {
                     RETURNING *;
                 `;
 
-            const createdUser = result[0] as User;
-            return createdUser;
+            return result[0] as User;
 
         } catch (error) {
             console.log('UserRepository create error', error);

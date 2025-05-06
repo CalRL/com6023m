@@ -25,18 +25,19 @@ export class UserService {
    * Add default permissions
    * Commit to database
    *
+   * @param username - The user's username
    * @param {string} email - The user's email.
    * @param {string} password - The password of the user.
    * @returns {Promise<User>} - The newly created user.
    * @throws {Error} - If the user creation fails.
    */
-  async createUser(email: string, password: string): Promise<UserDTO> {
+  async createUser(username: string, email: string, password: string): Promise<UserDTO> {
     try {
       /**
        * todo: find a better way to do this
        * maybe null this and have a secondary page to create username? or all in the same form?
        */
-      const username = await usernameFromEmail(email);
+
       const password_hash = await hashPassword(password);
 
       const user: Partial<User> = {

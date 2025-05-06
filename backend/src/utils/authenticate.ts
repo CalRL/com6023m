@@ -5,7 +5,7 @@ import {verifyToken} from './jwt.js';
  * @param {string | undefined} token - The JWT token to verify.
  * @returns {boolean} - Returns true if the token is valid, false otherwise.
  */
-export function authenticateToken(token?: string): boolean | object {
+export function authenticateToken(token?: string): DecodedToken | false {
     if (!token) return false;
 
     try {
@@ -17,9 +17,11 @@ export function authenticateToken(token?: string): boolean | object {
         console.error('Error verifying token:', error);
         return false;
     }
+
 }
 
 export interface DecodedToken {
     id: string;
     email: string;
+    type: 'access' | 'refresh';
 }

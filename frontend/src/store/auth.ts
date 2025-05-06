@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { jwtDecode } from 'jwt-decode';
+import axios from "../api/axios.ts";
 
 /**
  * Represents a user object decoded from JWT.
@@ -18,6 +19,8 @@ interface AuthState {
     initializeAuth: () => void;
     login: (token: string) => void;
     logout: () => void;
+    loading: boolean;
+    hasLoggedOut: boolean;
 }
 
 /**
@@ -27,25 +30,54 @@ const useAuthStore = create<AuthState>((set) => ({
     user: null,
     token: null,
     isAuthenticated: false,
+    loading: true,
+    hasLoggedOut: false,
 
     /**
      * Initializes authentication state by checking localStorage for an existing JWT token.
      */
-    initializeAuth: () => {
-        console.log('Initializing authentication...');
+    initializeAuth: async () => {
+        const state = useAuthStore.getState();
+        console.log(`Has logged out: ${state.hasLoggedOut}`)
+        if (state.hasLoggedOut) {
+            console.log('Auth check skipped due to recent logout.');
+            return;
+        }
+
+        set({ loading: true });
+
         try {
-            const token = localStorage.getItem('token');
-            if (token) {
-                const user = jwtDecode<User>(token);
-                console.log('Decoded user from token:', user);
-                set({ user, token, isAuthenticated: true });
-                console.log('Authentication initialized with token.');
-            } else {
-                console.warn('No token found in localStorage.');
+            console.log('Initializing auth via /auth/check...');
+            const res = await axios.get('/auth/check', {
+                withCredentials: true,
+            });
+
+            const data = res.data;
+
+            if (data.accessToken) {
+                localStorage.setItem('token', data.accessToken);
+                axios.defaults.headers.common['Authorization'] = `Bearer ${data.accessToken}`;
             }
+
+            set({
+                user: { email: data.email },
+                token: data.accessToken ?? null,
+                isAuthenticated: true,
+                loading: false,
+            });
+
+            console.log('Auth initialized: user is authenticated.');
         } catch (error) {
             console.error('Error initializing authentication:', error);
-            set({ user: null, token: null, isAuthenticated: false });
+            set({
+                user: null,
+                token: null,
+                isAuthenticated: false,
+                loading: false,
+            });
+
+            localStorage.removeItem('token');
+            delete axios.defaults.headers.common['Authorization'];
         }
     },
 
@@ -66,15 +98,26 @@ const useAuthStore = create<AuthState>((set) => ({
     /**
      * Logs out the user by clearing the JWT token and authentication state.
      */
-    logout: () => {
+    logout: async () => {
         try {
+            const response = await axios.post('/auth/logout', {}, { withCredentials: true });
+            console.log(JSON.stringify(response));
             localStorage.removeItem('token');
-            set({ user: null, token: null, isAuthenticated: false });
-            console.log('User logged out.');
+            delete axios.defaults.headers.common['Authorization'];
+
+            set({
+                user: null,
+                token: null,
+                isAuthenticated: false,
+                hasLoggedOut: true,
+            });
+
+            console.log('User logged out successfully.');
         } catch (error) {
-            console.error('Error during logout:', error);
+            console.error('Logout failed:', error);
+
         }
-    },
+    }
 }));
 
 export default useAuthStore;

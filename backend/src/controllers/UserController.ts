@@ -21,13 +21,13 @@ class UserController {
      */
     async createUser(req: Request, res: Response): Promise<Response>  {
         try {
-            const { email, password } = req.body.user;
+            const { username, email, password } = req.body.user;
 
-            if (!email || !password) {
+            if (!username || !email || !password) {
                 return res.status(400).json({ error: 'Email, username, and password are required' });
             }
 
-            const user: UserDTO = await userService.createUser(email, password);
+            const user: UserDTO = await userService.createUser(username, email, password);
             return res.status(201).json({ message: 'User created successfully', user });
         } catch (error) {
             console.error('Error creating user:', error);
@@ -86,6 +86,7 @@ class UserController {
     /**
      * Check user is self or admin
      * todo: make it chek req res
+     * todo: check perms
      * @param req
      * @param res
      */
@@ -176,7 +177,6 @@ class UserController {
 
     async getAllUsers(req: Request, res: Response): Promise<Response> {
         try {
-            //todo: get permission
             const user = await fromToken(req);
             console.log("UserController: " + JSON.stringify(user));
 

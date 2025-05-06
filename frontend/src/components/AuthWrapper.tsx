@@ -2,19 +2,14 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import useAuthStore from '../store/auth';
 
-interface AuthWrapperProps {
-    children: React.ReactNode;
-}
 
-const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
-    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+const AuthWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { isAuthenticated, loading } = useAuthStore();
 
-    if (!isAuthenticated) {
-        // If not authenticated, redirect to login page
-        return <Navigate to="/login" replace />;
-    }
+    if (loading) return <div>Loading authentication...</div>;
 
-    // If authenticated, render the wrapped children
+    if (!isAuthenticated) return <Navigate to="/login" replace />;
+
     return <>{children}</>;
 };
 

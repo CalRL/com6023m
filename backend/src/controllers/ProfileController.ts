@@ -5,6 +5,10 @@ import {AuthenticatedRequest} from "../utils/interface/AuthenticatedRequest.js";
 import authMiddleware from "../middleware/AuthMiddleware.js";
 import {Permissions} from "../User/Permissions.js";
 import {userService} from "../services/UserService.js";
+import {authService} from "../services/AuthService.js";
+import permissionsService from "../services/PermissionsService.js";
+import {debug} from "node:util";
+import {debugMode} from "../utils/DebugMode.js";
 
 class ProfileController {
 
@@ -39,7 +43,38 @@ class ProfileController {
 
     async getProfileById(req: Request, res: Response) {
         try {
-            const id = req.params.id;
+            const user = await authService.fromRequest(req, res);
+            if(!user || typeof user.id !== 'number') {
+                return res.status(401).json({ message: 'Unauthorized: No valid token found' });
+            }
+
+            const userId = user.id;
+            const targetId: number = req.params.id ? parseInt(req.params.id) : userId;
+
+            if(!targetId) {
+                return res.status(500);
+            }
+
+            let hasPermission: boolean = false;
+            if(targetId === user.id) {
+                hasPermission = await permissionsService.hasPermission(targetId, Permissions.SELF_READ);
+                debugMode.log(`ProfileController: Getting selfread permission ${hasPermission}`)
+            } else {
+                hasPermission = await permissionsService.hasPermission(targetId, Permissions.READ_OTHER);
+                debugMode.log(`ProfileController: Getting readother permission ${hasPermission}`)
+            }
+
+            if(!hasPermission) {
+                return res.status(401).json({ message: 'Unauthorized: Not authorized' });
+            }
+
+            const profile = await profileService.getProfileById(targetId);
+            if(!profile) {
+                return res.status(404).json({ message: 'Profile not found' });
+            }
+
+            return res.status(200).json(profile);
+
         } catch(error) {
             res.status(500);
             throw error;
@@ -47,16 +82,32 @@ class ProfileController {
     }
 
     async getUsername(req: Request, res: Response) {
-        const hasPermission = await authMiddleware.ensurePermission(req, res, Permissions.READ_OTHER);
+        const user = await authService.fromAccessToken(req);
+        if(!user || typeof user.id !== 'number') {
+            return res.status(401).json({ message: 'Unauthorized: No user found' });
+        }
+
+        const userId: number = user.id;
+        const targetId: number = req.params.id ? parseInt(req.params.id) : userId;
+
+        if(!targetId) {
+            return res.status(500);
+        }
+
+        let hasPermission = false;
+        if(targetId === user.id) {
+            hasPermission = await permissionsService.hasPermission(targetId, Permissions.SELF_READ);
+            debugMode.log(`ProfileController: Getting selfread permission ${hasPermission}`)
+        } else {
+            hasPermission = await permissionsService.hasPermission(targetId, Permissions.READ_OTHER);
+            debugMode.log(`ProfileController: Getting readother permission ${hasPermission}`)
+        }
+
         if(!hasPermission) {
             return res.status(401).json({ message: 'Unauthorized: Not authorized' });
         }
 
-        const targetId: string | undefined = req.params.id;
-        if(!targetId || typeof targetId === 'undefined') {
-            return res.status(500);
-        }
-        const username = await userService.getUsername(parseInt(targetId));
+        const username = await userService.getUsername(targetId);
         if(!username) {
             return res.status(404).json({ message: 'No username found' });
         }
@@ -76,7 +127,22 @@ class ProfileController {
         return res.status(403).json({ message: 'Forbidden.' });
     }
 
+    /*
+    todo: make it Only self
+     */
+    async uploadAvatar(req: Request, res: Response) {}
+    async deleteAvatar(req: Request, res: Response) {}
+    async uploadBanner(req: Request, res: Response) {}
+    async deleteBanner(req: Request, res: Response) {}
+    async updateLocation(req: Request, res: Response) {}
+    async getLocation(req: Request, res: Response) {}
 
+    async updateBio(req: Request, res: Response) {}
+    async getBio(req: Request, res: Response) {}
+
+    //todo: make a privacy interface
+    async getPrivacy(req: Request, res: Response) {}
+    async updatePrivacy(req: Request, res: Response) {}
 
 }
 

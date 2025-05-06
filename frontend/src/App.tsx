@@ -4,8 +4,9 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import useAuthStore from './store/auth';
 import LoginForm from './components/LoginForm';
 import AuthWrapper from './components/AuthWrapper';
-import Profile from './components/Profile';
 import RegisterForm from "./components/RegisterForm.tsx";
+import ProfileRouter from "./components/ProfileRouter.tsx";
+import Logout from "./components/Logout.tsx";
 
 
 const App: React.FC = () => {
@@ -24,11 +25,12 @@ const App: React.FC = () => {
                         <Route path="/" element={<LoginForm />} />
                         <Route path="/login" element={<LoginForm />} />
                         <Route path="/register" element={<RegisterForm />} />
+                        <Route path="/logout" element={<Logout />} />
                         <Route
-                            path="/profile"
+                            path="/profile/:id?"
                             element={
                                 <AuthWrapper>
-                                    <Profile />
+                                    <ProfileRouter />
                                 </AuthWrapper>
                             }
                         />

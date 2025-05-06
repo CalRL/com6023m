@@ -31,7 +31,7 @@ export function generateRefreshToken(payload: object): string {
  */
 export function verifyToken(token: string): object | null {
     try {
-        const decoded = jwt.decode(token);
+        const decoded = jwt.verify(token, secret);
         return decoded as DecodedToken;
     } catch (error) {
         return null;

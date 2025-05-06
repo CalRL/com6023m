@@ -8,7 +8,8 @@ import permissionsService from "../services/PermissionsService.js";
 import {Permissions} from "../User/Permissions.js";
 import {userService} from "../services/UserService.js";
 
-type WithUser = Request & AuthenticatedRequest;
+export type WithUser = Request & AuthenticatedRequest;
+
 export function tokenMiddleware(req: Request, res: Response, next: NextFunction) {
     try {
         const authHeader = req.headers.authorization;
@@ -73,7 +74,7 @@ export async function fromToken(req: Request): Promise<UserDTO | null> {
     return user;
 }
 
-function isDecodedToken(decoded: any): decoded is DecodedToken {
+export function isDecodedToken(decoded: any): decoded is DecodedToken {
     return (
         typeof decoded === 'object' &&
         decoded !== null &&
@@ -83,62 +84,6 @@ function isDecodedToken(decoded: any): decoded is DecodedToken {
 }
 
 class AuthMiddleware {
-
-    constructor() {
-        this.ensurePermission = this.ensurePermission.bind(this);
-    }
-
-    //todo: add res.status()
-    async fromRequest(req: Request, res: Response): Promise<UserDTO> {
-        const authHeader = req.headers.authorization;
-        const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : req.cookies?.refreshToken;
-
-        if(!token) {
-            console.error('No token provided');
-            throw new Error(`Forbidden: ${ErrorMessages.NO_TOKEN}`)
-        }
-
-        const decoded = authenticateToken(token);
-
-        if (!isDecodedToken(decoded)) {
-            console.error('Invalid or expired token structure');
-            throw new Error(`Forbidden: ${ErrorMessages.INVALID_TOKEN}`);
-        }
-
-        const user: UserDTO = (req as WithUser).user = {
-            id: parseInt(decoded.id)
-        }
-
-        console.log('From token: ', JSON.stringify(user));
-
-        return user;
-    }
-
-    /**
-     * Ensures the request attached has the provided permission.
-     * @param req
-     * @param res
-     * @param permission
-     */
-    async ensurePermission(req: Request, res: Response, permission: Permissions) {
-
-        const user = await this.fromRequest(req, res);
-
-        if (!user || typeof user.id !== 'number') {
-            console.error("AuthMiddleware: User ID is undefined or invalid.");
-            res.status(500).json({ error: 'User not authenticated properly.' });
-            return false;
-        }
-
-        const hasPermission = await permissionsService.hasPermission(user.id, permission);
-
-        if (!hasPermission) {
-            res.status(403).json({ error: 'Forbidden' });
-            return false;
-        }
-
-        return true;
-    }
 
     async adminMiddleware(req: Request, res: Response, next: NextFunction) {
         const authHeader = req.headers.authorization;
