@@ -8,10 +8,10 @@ import {DecodedToken} from "../utils/authenticate.js";
  * Handles user registration.
  */
 export async function registerController(req: Request, res: Response) {
-    const { email, password } = req.body;
+    const { username, email, password } = req.body;
 
     try {
-        const { accessToken, refreshToken } = await authService.registerUser(email, password);
+        const { accessToken, refreshToken } = await authService.registerUser(username, email, password);
         const sevenDays: number = 7 * 24 * 60 * 60 * 1000;
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,

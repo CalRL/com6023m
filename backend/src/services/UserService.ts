@@ -37,7 +37,9 @@ export class UserService {
        * todo: find a better way to do this
        * maybe null this and have a secondary page to create username? or all in the same form?
        */
-
+      console.log(`Service Username: ${username}`);
+      console.log(`Email: ${email}`);
+      console.log(`Password: ${password}`);
       const password_hash = await hashPassword(password);
 
       const user: Partial<User> = {

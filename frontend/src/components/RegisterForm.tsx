@@ -56,6 +56,7 @@ const RegisterForm: React.FC = () => {
         }
 
         try {
+            console.log("Attempting to register");
             const JSON = {
                 email: email,
                 username: username,
@@ -124,9 +125,9 @@ const RegisterForm: React.FC = () => {
         <button
             type="submit"
         className="w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        disabled={Object.keys(errors).length === 0}
+        disabled={Object.keys(errors).length > 0}
         >
-        Login
+        Register
         </button>
     </form>
 );

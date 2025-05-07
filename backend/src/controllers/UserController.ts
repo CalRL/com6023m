@@ -27,6 +27,10 @@ class UserController {
                 return res.status(400).json({ error: 'Email, username, and password are required' });
             }
 
+            console.log(`Username: ${username}`);
+            console.log(`Email: ${email}`);
+            console.log(`Password: ${password}`);
+
             const user: UserDTO = await userService.createUser(username, email, password);
             return res.status(201).json({ message: 'User created successfully', user });
         } catch (error) {

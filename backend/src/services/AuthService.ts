@@ -16,9 +16,9 @@ class AuthService {
      * @param {string} password - User plain text password.
      * @returns {Promise<{ accessToken: string, refreshToken: string }>} - Generated tokens.
      */
-    async registerUser(email: string, password: string) {
+    async registerUser(username: string, email: string, password: string) {
         try {
-            const user: UserDTO = await userService.createUser(email, password);
+            const user: UserDTO = await userService.createUser(username, email, password);
             if (!user) throw new Error('User creation failed');
 
             const accessToken = generateAccessToken({ id: user.id, email: user.email });
