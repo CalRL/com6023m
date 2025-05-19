@@ -54,14 +54,17 @@ class PermissionsService {
             const result = await database`
                 SELECT * FROM permissions WHERE user_id = ${userId}
             `;
-
             // If no permission found, return false
-            if(result.length === 0) return false;
+            if(result.length === 0) {
+                debugMode.log("No permissions found");
+                debugMode.log(`UserID: ${userId}, type: ${typeof userId}`);
+                return false;
+            }
             const permissions = result[0]
 
 
             console.log(typeof permissions);
-            // debugMode.log("Permissions: " + JSON.stringify(permissions.permissions));
+            debugMode.log("Permissions: " + JSON.stringify(permissions.permissions));
             const userPermissions = permissions.permissions;
             if(userPermissions.includes(string)) {
                 debugMode.log(`PermissionsService: hasPermission: '${string}' true`);

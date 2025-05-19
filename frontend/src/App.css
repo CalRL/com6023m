@@ -43,3 +43,13 @@
 .read-the-docs {
   color: #888;
 }
+
+@layer base {
+  html {
+    color-scheme: light; /* forces light appearance for native elements */
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+}

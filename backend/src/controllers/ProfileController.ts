@@ -60,7 +60,7 @@ class ProfileController {
                 hasPermission = await permissionsService.hasPermission(targetId, Permissions.SELF_READ);
                 debugMode.log(`ProfileController: Getting selfread permission ${hasPermission}`)
             } else {
-                hasPermission = await permissionsService.hasPermission(targetId, Permissions.READ_OTHER);
+                hasPermission = await permissionsService.hasPermission(user.id, Permissions.READ_OTHER);
                 debugMode.log(`ProfileController: Getting readother permission ${hasPermission}`)
             }
 
