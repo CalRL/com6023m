@@ -9,6 +9,7 @@ export enum Permissions {
 
     // Content Permissions
     CREATE_POST = 'CREATE_POST',
+    READ_POST = 'READ_POST',
     UPDATE_POST = 'UPDATE_POST',
     DELETE_POST = 'DELETE_POST',
     CREATE_COMMENT = 'CREATE_COMMENT',
@@ -35,7 +36,7 @@ export enum Permissions {
     SEND_MESSAGE = 'SEND_MESSAGE',
     READ_MESSAGE = 'READ_MESSAGE',
     DELETE_MESSAGE = 'DELETE_MESSAGE',
-    MODERATE_MESSAGES = 'MODERATE_MESSAGES'
+    MODERATE_MESSAGES = 'MODERATE_MESSAGES',
 }
 
 export const defaultPermissions: string[] = [

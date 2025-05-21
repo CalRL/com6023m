@@ -6,6 +6,8 @@ import {Permissions} from "../User/Permissions.js";
 import {User, UserDTO} from "../models/UserModel.js";
 import {PostDTO} from "../models/PostModel.js";
 import {ErrorMessages} from "../utils/errors.js";
+import {authService} from "../services/AuthService.js";
+import postsService from "../services/PostsService.js";
 
 class PostsController {
     status: string = "Alive";
@@ -28,17 +30,52 @@ class PostsController {
         }
 
         const post = req.body.post as PostDTO;
+        post.profileId = user.id;
         if(!post) {
             return res.status(500).json({ message: "Couldn't process post" });
         }
 
+        const createdPost = await postsService.create(post);
+        return res.status(201).json({createdPost});
+
     }
     async updatePost(req: Request, res: Response) {}
-    async deletePost(req: Request, res: Response) {}
+    async deletePost(req: Request, res: Response) {
+        const user = await fromToken(req);
+        if(!user || !user.id) {
+            return res.status(401).json({ message: 'User Not Found' });
+        }
+
+        const postId = req.params.id;
+        const post = await postsService.getById(parseInt(postId));
+        if(!post) {
+            return res.status(404).json({ message: 'Not found' });
+        }
+        let hasPermission = false;
+        if(post.profileId == user.id) {
+            hasPermission = await permissionsService.hasPermission(user.id, Permissions.DELETE_POST);
+        } else {
+            let deleteOther: boolean = await permissionsService.hasPermission(user.id, Permissions.DELETE_OTHER_POST)
+            let admin: boolean= await permissionsService.hasPermission(user.id, Permissions.ADMIN)
+            if(admin || deleteOther) {
+                hasPermission = true;
+            }
+        }
+
+        if(!hasPermission) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
+        const isDeleted = await postsService.deleteById(parseInt(postId));
+        if(!isDeleted) {
+            return res.status(500).json({ message: 'Error' });
+        }
+        return res.status(204).json({message: 'Successfully deleted'});
+    }
 
     async getStatus(req: Request, res: Response) {
         try {
-            const user = await authMiddleware.fromRequest(req, res);
+            const user = await authService.fromRequest(req, res);
 
             debugMode.log("PostsController: " + JSON.stringify(user));
             if(!user || !user.id) {
@@ -78,9 +115,27 @@ class PostsController {
     }
 
     // R methods
-    async getPostById(req: Request, res: Response) {}
+    async getPostById(req: Request, res: Response) {
+        const user = await fromToken(req);
+        if(!user || !user.id) {
+            return res.status(401).json({ message: 'User Not Found' });
+        }
+        const hasPermission = await permissionsService.hasPermission(user.id, Permissions.READ_POST);
+        if(!hasPermission) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
+        const postId = req.params.id;
+        const post = await postsService.getById(parseInt(postId));
+
+        return res.status(200).json({post});
+
+
+    }
     async getPostsByParentId(req: Request, res: Response) {}
-    async getPostsByUserId(req: Request, res: Response) {}
+    async getPostsByUserId(req: Request, res: Response) {
+        
+    }
 
     /**
      * Gets the user

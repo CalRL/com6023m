@@ -27,13 +27,13 @@ class ProfileController {
             //     return res.status(403).json({ message: 'Permission denied' });
             // }
 
-            const profileDTO: ProfileDTO | null = await profileService.getProfileById(userId);
-            if (!profileDTO) {
+            const profile: ProfileDTO | null = await profileService.getProfileById(userId);
+            if (!profile) {
                 return res.status(404).json({ message: 'Profile not found' });
             }
 
-            console.log("getProfile Output: " + JSON.stringify(profileDTO));
-            return res.status(200).json(profileDTO);
+            console.log("getProfile Output: " + JSON.stringify(profile));
+            return res.status(200).json({profile});
         } catch (error: any) {
             console.error('Error fetching profile:', error.message);
             return res.status(500).json({ message: 'Error fetching profile' });
@@ -57,7 +57,7 @@ class ProfileController {
 
             let hasPermission: boolean = false;
             if(targetId === user.id) {
-                hasPermission = await permissionsService.hasPermission(targetId, Permissions.SELF_READ);
+                hasPermission = await permissionsService.hasPermission(user.id, Permissions.SELF_READ);
                 debugMode.log(`ProfileController: Getting selfread permission ${hasPermission}`)
             } else {
                 hasPermission = await permissionsService.hasPermission(user.id, Permissions.READ_OTHER);
@@ -73,7 +73,7 @@ class ProfileController {
                 return res.status(404).json({ message: 'Profile not found' });
             }
 
-            return res.status(200).json(profile);
+            return res.status(200).json({profile});
 
         } catch(error) {
             res.status(500);

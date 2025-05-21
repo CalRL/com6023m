@@ -8,6 +8,7 @@ import {ErrorMessages} from "../utils/errors.js";
 import {authenticateToken} from "../utils/authenticate.js";
 import {isDecodedToken, WithUser} from "../middleware/AuthMiddleware.js";
 import {Permissions} from "../User/Permissions.js";
+import {debugMode} from "../utils/DebugMode.js";
 
 class AuthService {
     /**
@@ -41,12 +42,14 @@ class AuthService {
             // Find the user by email
             const user = await userService.findByEmail(email);
             if (!user) {
+                debugMode.log("No User")
                 throw new Error('Invalid credentials');
             }
 
             // Verify the password
             const isMatch = await verifyPassword(password, user.password_hash);
             if (!isMatch) {
+                debugMode.log("No Match")
                 throw new Error('Invalid credentials');
             }
 
