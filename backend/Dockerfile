@@ -1,15 +1,22 @@
-FROM node:22.14.0-alpine
+# Base image with Node.js
+FROM node:20
 
+# Set working directory
 WORKDIR /app
 
+# Copy files
 COPY package*.json ./
-
-# Remove nodemon eventually, when builds suceed
-RUN npm install -g nodemon tsx
-
-RUN npm install
-
+COPY tsconfig*.json ./
 COPY . .
 
-EXPOSE 5000
-CMD ["npm", "run", "dev"]
+# Install dependencies
+RUN npm install
+
+# Build TypeScript
+RUN npm run build
+
+# Expose app port
+EXPOSE 3001
+
+# Start the app
+CMD ["node", "dist/src/app.js"]

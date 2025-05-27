@@ -13,15 +13,22 @@ import MainLayout from './components/MainLayout';
 import HomePage from './pages/HomePage';
 
 import BookmarksPage from "./pages/BooksmarksPage";
+import PostThreadPage from "./pages/PostThreadPage.tsx";
+import {RefreshProvider} from "./components/context/RefreshContext.tsx";
 
 const App: React.FC = () => {
     const initializeAuth = useAuthStore((state) => state.initializeAuth);
 
     useEffect(() => {
+        document.title = 'PostR';
         initializeAuth();
     }, [initializeAuth]);
 
     return (
+
+        <RefreshProvider>
+
+
         <div className="min-h-screen w-screen bg-lightBg text-black dark:bg-[#171717] dark:text-white transition-colors duration-300">
             <Router>
                 <div className="mx-auto flex text-white dark:text-slate-600">
@@ -46,6 +53,7 @@ const App: React.FC = () => {
                                 <Route path="/home" element={<HomePage />} />
                                 <Route path="/bookmarks" element={<BookmarksPage />} />
                                 <Route path="/profile/:id?" element={<ProfileRouter />} />
+                                <Route path="/posts/:postId" element={<PostThreadPage />} />
                             </Route>
                         </Routes>
                     </div>
@@ -61,6 +69,7 @@ const App: React.FC = () => {
                 </div>
             </Router>
         </div>
+        </RefreshProvider>
     );
 };
 

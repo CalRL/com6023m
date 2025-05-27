@@ -1,9 +1,8 @@
-import {defaultPermissions, Permissions} from "../User/Permissions.js";
-import database from "../config/database.js";
+import {defaultPermissions, Permissions} from '../User/Permissions.js';
+import database from '../config/database.js';
 
-import {PermissionsDTO} from "../models/PermissionModel.js";
-import {permissionsRepository} from "../repository/PermissionsRepository.js";
-import {debugMode} from "../utils/DebugMode.js";
+import {PermissionsDTO} from '../models/PermissionModel.js';
+import {debugMode} from '../utils/DebugMode.js';
 class PermissionsService {
     //TODO: create Permissions Repository
     async createDefaultPermissions(userId: number): Promise<void> {
@@ -28,18 +27,18 @@ class PermissionsService {
 
     //todo: this
     async getPermissions(userId: number): Promise<unknown> {
-        try {
+        const result = await database`
+            SELECT * FROM permissions WHERE user_id=${userId}
+        `;
+        console.log('Permissions:' + JSON.stringify(result[0]));
+        const permissionsDTO = result[0] as PermissionsDTO;
 
-            const permissions: PermissionsDTO | null = await permissionsRepository.getPermissions(userId);
-
-            if(permissions == null) {
-                throw new Error("Permissions returned null...");
-            }
-            console.log(JSON.stringify(permissions.permissions));
-            return permissions.permissions;
-        } catch (error) {
-            throw error;
+        if(permissionsDTO == null) {
+            console.error(`Permissions not found for user with id ${userId}`);
+            return null;
         }
+
+        return permissionsDTO.permissions;
     }
 
     /**
@@ -56,15 +55,14 @@ class PermissionsService {
             `;
             // If no permission found, return false
             if(result.length === 0) {
-                debugMode.log("No permissions found");
+                debugMode.log('No permissions found');
                 debugMode.log(`UserID: ${userId}, type: ${typeof userId}`);
                 return false;
             }
-            const permissions = result[0]
+            const permissions = result[0];
 
 
-            console.log(typeof permissions);
-            debugMode.log("Permissions: " + JSON.stringify(permissions.permissions));
+            debugMode.log('Permissions: ' + JSON.stringify(permissions.permissions));
             const userPermissions = permissions.permissions;
             if(userPermissions.includes(string)) {
                 debugMode.log(`PermissionsService: hasPermission: '${string}' true`);

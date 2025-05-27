@@ -24,4 +24,6 @@ export interface DecodedToken {
     id: string;
     email: string;
     type: 'access' | 'refresh';
+    jti?: string;
+    exp?: number;
 }

@@ -1,0 +1,60 @@
+version: '3'
+
+tasks:
+  lint:
+    desc: Lint the frontend
+    cmds:
+      - echo "[lint] Running ESLint..."
+      - npx eslint . --ext .ts,.tsx,.js --fix --quiet
+      - echo "[lint] Done."
+
+  build:
+    desc: Build the frontend
+    cmds:
+      - echo "[build] Installing deps and building..."
+      - npm install
+      - npm run build
+      - echo "[build] Done."
+
+  test:
+    desc: Run unit tests
+    cmds:
+      - echo "[test] Running Vitest..."
+      - npx vitest run --coverage
+      - echo "[test] Done."
+
+  deploy:
+    desc: Build and run frontend container
+    cmds:
+      - echo "[frontend] building..."
+      - sudo docker build -t frontend-nginx .
+      - echo "[frontend] running container on port 4000..."
+      - sudo docker stop frontend-nginx || true
+      - sudo docker rm frontend-nginx || true
+      - sudo docker run --rm --name frontend-nginx -p 4000:4000 frontend-nginx
+
+  deploy:windows:
+    desc: Build and run frontend container (Windows)
+    cmds:
+      - echo "[frontend] building..."
+      - docker build -t frontend-nginx .
+      - echo "[frontend] running container on port 4000..."
+      - docker stop frontend-nginx || true
+      - docker rm frontend-nginx || true
+      - docker run --rm --name frontend-nginx -p 4000:4000 frontend-nginx
+
+  ci:windows:
+    desc: CI pipeline for Windows
+    cmds:
+      - task lint
+      - task test
+      - task build
+      - task deploy:windows
+
+  ci:
+    desc: CI pipeline
+    cmds:
+      - task lint
+      - task test
+      - task build
+      - task deploy

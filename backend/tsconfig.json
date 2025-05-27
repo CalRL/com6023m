@@ -2,7 +2,7 @@
   "compilerOptions": 
   { 
     "target": "ES2020",
-    "module": "esnext",
+    "module": "nodenext",
     "esModuleInterop": true, 
     "moduleResolution": "nodenext",
     "sourceMap": true,
@@ -12,8 +12,9 @@
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "types": ["node", "vitest/globals"]
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "tests/**/*.ts"],
   "exclude": ["node_modules"]
 }

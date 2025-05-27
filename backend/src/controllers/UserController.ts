@@ -1,11 +1,14 @@
-import {userService} from "../services/UserService.js";
-import {UserDTO} from "../models/UserModel.js";
-import permissionsService from "../services/PermissionsService.js";
-import {fromToken} from "../middleware/AuthMiddleware.js";
-import { User } from "../models/UserModel.js";
-import { Request, Response } from "express";
-import {debugMode} from "../utils/DebugMode.js";
-import { Permissions } from "../User/Permissions.js";
+import {userService} from '../services/UserService.js';
+import {UserDTO} from '../models/UserModel.js';
+import permissionsService from '../services/PermissionsService.js';
+
+import { User } from '../models/UserModel.js';
+import { Request, Response } from 'express';
+import {debugMode} from '../utils/DebugMode.js';
+import { Permissions } from '../User/Permissions.js';
+import blacklistService from '../services/BlacklistService.js';
+
+import {authService} from '../services/AuthService.js';
 
 
 class UserController {
@@ -66,7 +69,7 @@ class UserController {
         try {
             const { id } = req.params;
             const user: UserDTO = req.body;
-            console.log("User: " + JSON.stringify(user))
+            console.log('User: ' + JSON.stringify(user));
 
             const parsedId = parseInt(id);
 
@@ -74,7 +77,7 @@ class UserController {
                 return res.status(422).json({ error: 'User format invalid' });
             }
 
-            const updatedUser = await userService.update(parsedId, user)
+            const updatedUser = await userService.update(parsedId, user);
 
             if (!updatedUser) {
                 return res.status(404).json({ error: 'User not found' });
@@ -96,10 +99,10 @@ class UserController {
      */
     async deleteUserById(req: Request, res: Response): Promise<Response> {
         try {
-            const { id } = req.params
+            const { id } = req.params;
             const targetId: number = parseInt(id);
 
-            const user = await fromToken(req);
+            const user = await authService.fromRequest(req, res);
             if(!user) {
                 return res.status(500);
             }
@@ -123,28 +126,38 @@ class UserController {
                 hasPermission = await permissionsService.hasPermission(userId, Permissions.DELETE_SELF);
             } else {
                 if(await permissionsService.hasPermission(userId, Permissions.DELETE_OTHER)) {
-                    hasPermission = true
+                    hasPermission = true;
                 }
                 if (await permissionsService.hasPermission(userId, Permissions.ADMIN)) {
-                    hasPermission = true
+                    hasPermission = true;
                 }
             }
 
             if(!hasPermission) {
-                return res.status(403).json({ message: "Forbidden: Lacking permission"})
+                return res.status(403).json({ message: 'Forbidden: Lacking permission'});
             }
 
             const success = await userService.deleteById(targetId);
+
+            if (userId === targetId) {
+                const token = req.headers.authorization?.split(' ')[1];
+                blacklistService.add(token!);
+            }
 
             if(!success) {
                 res.status(500).json({message: `Couldn't delete user with id ${targetId}`});
                 throw new Error(`UserService couldn't delete ${targetId}`);
             }
 
-            return res.status(200).json({ message: 'Success'})
+            res.clearCookie('refreshToken', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+            });
+
+            return res.status(200).json({ message: 'Success'});
 
         } catch(error) {
-            console.error("Error deleting user: ", error);
+            console.error('Error deleting user: ', error);
             return res.status(500).json({ error: 'Error deleting user' });
         }
 
@@ -156,7 +169,7 @@ class UserController {
      * @param res
      */
     async deleteUser(req: Request, res: Response): Promise<Response> {
-        const user = await fromToken(req);
+        const user = await authService.fromRequest(req, res);
         if(!user) {
             return res.status(500).json({ error: 'User not found' });
         }
@@ -168,7 +181,7 @@ class UserController {
 
         const hasPermission = await permissionsService.hasPermission(userId, Permissions.DELETE_SELF);
         if(!hasPermission) {
-            return res.status(403).json({ message: "Forbidden: Lacking permission"});
+            return res.status(403).json({ message: 'Forbidden: Lacking permission'});
         }
 
         const success = await userService.deleteById(userId);
@@ -181,14 +194,14 @@ class UserController {
 
     async getAllUsers(req: Request, res: Response): Promise<Response> {
         try {
-            const user = await fromToken(req);
-            console.log("UserController: " + JSON.stringify(user));
+            const user = await authService.fromRequest(req, res);
+            console.log('UserController: ' + JSON.stringify(user));
 
             if(user == null || user.id == null) {
                 return res.status(500).json({ error: 'User not found in provided token' });
             }
             
-            const hasPermission = await permissionsService.hasPermission(user.id, "ADMIN");
+            const hasPermission = await permissionsService.hasPermission(user.id, 'ADMIN');
             console.log('Perm: ' + hasPermission);
 
             if(!hasPermission) {
@@ -200,18 +213,18 @@ class UserController {
             return res.status(200).json(users);
         } catch (error) {
             console.error(error);
-            return res.status(500).json({ error: "Error getting users"});
+            return res.status(500).json({ error: 'Error getting users'});
         }
     }
     async getUserById(req: Request, res: Response): Promise<Response> {
         const userId = parseInt(req.params.id);
-        const reqUser = await fromToken(req);
+        const reqUser = await authService.fromRequest(req, res);
 
         if(reqUser == null || reqUser.id == null) {
             return res.status(500).json({ error: 'User not found in provided token' });
         }
 
-        const hasPermission = await permissionsService.hasPermission(reqUser.id, "ADMIN");
+        const hasPermission = await permissionsService.hasPermission(reqUser.id, 'ADMIN');
 
         if(!hasPermission) {
             debugMode.log(`User ${userId} does not have permission`);
@@ -232,17 +245,17 @@ class UserController {
     async checkPermission() {}
 
     async getPermissions(req: Request, res: Response): Promise<Response> {
-        const user = await fromToken(req);
+        const user = await authService.fromRequest(req, res);
         if(!user) {
             return res.status(500).json({ error: 'User not found in provided token'});
         }
 
         const userId: number | undefined = user.id;
         if(!userId) {
-            return res.status(500).json({error: 'No user id found'})
+            return res.status(500).json({error: 'No user id found'});
         }
 
-        let hasPermission: boolean = await permissionsService.hasPermission(userId, Permissions.SELF_READ);
+        const hasPermission: boolean = await permissionsService.hasPermission(userId, Permissions.SELF_READ);
         if(!hasPermission) {
             return res.status(403).json({ error: 'Forbidden: Permission Denied' });
         }
@@ -268,7 +281,7 @@ class UserController {
 
             // Get fields from request body
             const { fields } = req.body;
-            debugMode.log("Fields:" + JSON.stringify(fields));
+            debugMode.log('Fields:' + JSON.stringify(fields));
             // Use the UserService to get the fields
             const userData = await userService.getFields(userId, fields);
 

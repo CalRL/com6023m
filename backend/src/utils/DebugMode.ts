@@ -9,7 +9,7 @@ export class DebugMode {
         this.isEnabledString = process.env.DEBUG_MODE;
         this.prefix = process.env.DEBUG_PREFIX;
 
-        if(this.isEnabledString && this.isEnabledString === "true") {
+        if(this.isEnabledString && this.isEnabledString === 'true') {
             this.isEnabled = true;
         }
     }
@@ -18,21 +18,21 @@ export class DebugMode {
         if(!this.isEnabled) {
             return;
         }
-        console.log(this.prefix + " " + str);
+        console.log(this.prefix + ' ' + str);
     }
     warn(str: string) {
         if(!this.isEnabled) {
             return;
         }
 
-        console.warn(this.prefix + " " + str);
+        console.warn(this.prefix + ' ' + str);
     }
     error(str: string) {
         if(!this.isEnabled) {
             return;
         }
 
-        console.error(this.prefix + " " + str);
+        console.error(this.prefix + ' ' + str);
     }
 }
 

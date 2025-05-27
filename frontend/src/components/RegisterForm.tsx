@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axios';
 import useAuthStore from '../store/auth';
+import CenteredPage from "../pages/CenteredPage.tsx";
 
 const RegisterForm: React.FC = () => {
     const [email, setEmail] = useState<string>('');
@@ -86,9 +87,10 @@ const RegisterForm: React.FC = () => {
     };
     const boxClass = "block w-full border-neutral-500 p-2 mb-4 border rounded"
     return (
+        <CenteredPage>
         <form onSubmit={handleRegister} className="p-4 bg-neutral-200 dark:bg-neutral-800 rounded-xl mt-8">
     <div className="mb-4 space-y-0 text-left">
-    <h2 className="text-2xl ">Sign in</h2>
+    <h2 className="text-2xl ">Sign up</h2>
         <div>or <a href="/register">create an account</a></div>
     </div>
 
@@ -130,6 +132,7 @@ const RegisterForm: React.FC = () => {
         Register
         </button>
     </form>
+        </CenteredPage>
 );
 };
 

@@ -1,16 +1,22 @@
-import express from "express";
-import {postsController} from "../controllers/PostsController.js";
-import {asyncHandler} from "../utils/asyncHandler.js";
-import authMiddleware from "../middleware/AuthMiddleware.js";
+import express from 'express';
+import {postsController} from '../controllers/PostsController.js';
+import {asyncHandler} from '../utils/asyncHandler.js';
+import authMiddleware from '../middleware/AuthMiddleware.js';
 
 const router = express.Router();
 
-router.get('/status', asyncHandler(postsController.getStatus));
-router.put('/status', asyncHandler(postsController.updateStatus));
+router.get('/status', authMiddleware.tokenMiddleware, asyncHandler(postsController.getStatus));
+router.put('/status', authMiddleware.tokenMiddleware, asyncHandler(postsController.updateStatus));
 
-router.post('/', asyncHandler(postsController.createPost));
+router.get('/:id/replies', authMiddleware.tokenMiddleware, asyncHandler(postsController.getPostReplies));
+router.get('/:id/liked', authMiddleware.tokenMiddleware, asyncHandler(postsController.hasLiked));
+router.post('/:id/like', authMiddleware.tokenMiddleware, asyncHandler(postsController.addLike));
+router.delete('/:id/like', authMiddleware.tokenMiddleware, asyncHandler(postsController.deleteLike));
+
+router.get('/', authMiddleware.tokenMiddleware, asyncHandler(postsController.getLatestPosts));
+router.post('/', authMiddleware.tokenMiddleware, asyncHandler(postsController.createPost));
 router.delete('/:id', authMiddleware.tokenMiddleware, asyncHandler(postsController.deletePost));
-router.get('/:id', authMiddleware.tokenMiddleware, asyncHandler(postsController.getPostById))
-router.get('/user/:id', authMiddleware.tokenMiddleware, asyncHandler(postsController.getPostsByUserId)); // todo
+router.get('/:id', authMiddleware.tokenMiddleware, asyncHandler(postsController.getPostById));
+router.get('/profile/:id', authMiddleware.tokenMiddleware, asyncHandler(postsController.getPostsByUserId)); // todo
 
 export default router;

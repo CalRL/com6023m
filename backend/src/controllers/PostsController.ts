@@ -1,16 +1,19 @@
-import { Request, Response } from "express";
-import {debugMode} from "../utils/DebugMode.js";
-import authMiddleware, {fromToken} from "../middleware/AuthMiddleware.js";
-import permissionsService from "../services/PermissionsService.js";
-import {Permissions} from "../User/Permissions.js";
-import {User, UserDTO} from "../models/UserModel.js";
-import {PostDTO} from "../models/PostModel.js";
-import {ErrorMessages} from "../utils/errors.js";
-import {authService} from "../services/AuthService.js";
-import postsService from "../services/PostsService.js";
+import { Request, Response } from 'express';
+import {debugMode} from '../utils/DebugMode.js';
+import authMiddleware, {fromToken} from '../middleware/AuthMiddleware.js';
+import permissionsService from '../services/PermissionsService.js';
+import {Permissions} from '../User/Permissions.js';
+import {User, UserDTO} from '../models/UserModel.js';
+import {PostDTO} from '../models/PostModel.js';
+import {ErrorMessages} from '../utils/errors.js';
+import {authService} from '../services/AuthService.js';
+import postsService from '../services/PostsService.js';
+import formatPostWithCounts from '../utils/post/PostUtils.js';
+import {profileService} from '../services/ProfileService.js';
+
 
 class PostsController {
-    status: string = "Alive";
+    status: string = 'Alive';
 
     constructor() {
         this.getStatus = this.getStatus.bind(this);
@@ -20,7 +23,7 @@ class PostsController {
     // CRUD
     // CUD Methods
     async createPost(req: Request, res: Response) {
-        const user = await fromToken(req);
+        const user = await authService.fromRequest(req, res);
         if(!user || !user.id) {
             return res.status(401).json({ message: 'User Not Found' });
         }
@@ -32,7 +35,7 @@ class PostsController {
         const post = req.body.post as PostDTO;
         post.profileId = user.id;
         if(!post) {
-            return res.status(500).json({ message: "Couldn't process post" });
+            return res.status(500).json({ message: 'Couldn\'t process post' });
         }
 
         const createdPost = await postsService.create(post);
@@ -41,7 +44,7 @@ class PostsController {
     }
     async updatePost(req: Request, res: Response) {}
     async deletePost(req: Request, res: Response) {
-        const user = await fromToken(req);
+        const user = await authService.fromRequest(req, res);
         if(!user || !user.id) {
             return res.status(401).json({ message: 'User Not Found' });
         }
@@ -55,8 +58,8 @@ class PostsController {
         if(post.profileId == user.id) {
             hasPermission = await permissionsService.hasPermission(user.id, Permissions.DELETE_POST);
         } else {
-            let deleteOther: boolean = await permissionsService.hasPermission(user.id, Permissions.DELETE_OTHER_POST)
-            let admin: boolean= await permissionsService.hasPermission(user.id, Permissions.ADMIN)
+            const deleteOther: boolean = await permissionsService.hasPermission(user.id, Permissions.DELETE_OTHER_POST);
+            const admin: boolean= await permissionsService.hasPermission(user.id, Permissions.ADMIN);
             if(admin || deleteOther) {
                 hasPermission = true;
             }
@@ -77,77 +80,186 @@ class PostsController {
         try {
             const user = await authService.fromRequest(req, res);
 
-            debugMode.log("PostsController: " + JSON.stringify(user));
+            debugMode.log('PostsController: ' + JSON.stringify(user));
             if(!user || !user.id) {
                 return res.status(401).json({ message: 'User Not Found' });
             }
 
-            const hasPermission = permissionsService.hasPermission(user.id, Permissions.ADMIN)
+            const hasPermission = permissionsService.hasPermission(user.id, Permissions.ADMIN);
             if(!hasPermission) {
                 return res.status(403).json({ message: 'Forbidden' });
             }
             debugMode.log(`PostsController: hasPermission: ${JSON.stringify(hasPermission)}`);
-            return res.status(200).json({"status": this.status});
+            return res.status(200).json({'status': this.status});
 
         } catch (error) {
             return res.status(403).json({ message: (error as Error).message });
         }
     }
     async updateStatus(req: Request, res: Response) {
-        try {
-            const user = await fromToken(req);
-            debugMode.log("PostsController: " + JSON.stringify(user));
-            if(!user || !user.id) {
-                return res.status(401).json({ message: 'User Not Found' });
-            }
-            const hasPermission = await permissionsService.hasPermission(user.id, Permissions.ADMIN);
-            debugMode.log(`PostsController: hasPermission: ${JSON.stringify(hasPermission)}`);
-            if(!hasPermission) {
-                return res.status(403).json({ message: 'Forbidden' });
-            }
-
-            this.status = this.status === "Alive" ? "Inactive" : "Alive";
-            debugMode.log(`PostsController: updated status to '${this.status}' by: ${JSON.stringify(user)}`);
-            return res.status(200).json({"status": this.status});
-        } catch(error) {
-            throw error;
-        }
-    }
-
-    // R methods
-    async getPostById(req: Request, res: Response) {
-        const user = await fromToken(req);
+        const user = await authService.fromRequest(req, res);
+        debugMode.log('PostsController: ' + JSON.stringify(user));
         if(!user || !user.id) {
             return res.status(401).json({ message: 'User Not Found' });
         }
-        const hasPermission = await permissionsService.hasPermission(user.id, Permissions.READ_POST);
+        const hasPermission = await permissionsService.hasPermission(user.id, Permissions.ADMIN);
+        debugMode.log(`PostsController: hasPermission: ${JSON.stringify(hasPermission)}`);
         if(!hasPermission) {
             return res.status(403).json({ message: 'Forbidden' });
         }
 
-        const postId = req.params.id;
-        const post = await postsService.getById(parseInt(postId));
-
-        return res.status(200).json({post});
-
-
+        this.status = this.status === 'Alive' ? 'Inactive' : 'Alive';
+        debugMode.log(`PostsController: updated status to '${this.status}' by: ${JSON.stringify(user)}`);
+        return res.status(200).json({'status': this.status});
     }
+
+    async getPostById(req: Request, res: Response) {
+        const user = await authService.fromRequest(req, res);
+        if (!user?.id) {
+            return res.status(401).json({ message: 'User not found' });
+        }
+
+        const postId = parseInt(req.params.id);
+        if (isNaN(postId)) {
+            return res.status(400).json({ message: 'Invalid post ID' });
+        }
+
+        try {
+            const post = await postsService.getById(postId);
+            if (!post) {
+                return res.status(404).json({ message: 'Post not found' });
+            }
+
+            const profile = await profileService.getProfileById(post.profileId);
+            if (!profile) {
+                return res.status(404).json({ message: 'Profile not found' });
+            }
+
+            const enrichedPost = await formatPostWithCounts(post, user.id);
+
+            return res.status(200).json({
+                post: enrichedPost,
+                profile
+            });
+        } catch (err) {
+            console.error('Failed to get enriched post:', err);
+            return res.status(500).json({ message: 'Internal server error' });
+        }
+    }
+
     async getPostsByParentId(req: Request, res: Response) {}
     async getPostsByUserId(req: Request, res: Response) {
-        
+
+        const user = await authService.fromRequest(req, res);
+        debugMode.log('PostsController: ' + JSON.stringify(user));
+        if(!user || !user.id) {
+            return res.status(401).json({ message: 'User Not Found' });
+        }
+        const hasPermission = await permissionsService.hasPermission(user.id, Permissions.READ_OTHER);
+        debugMode.log(`PostsController: hasPermission: ${JSON.stringify(hasPermission)}`);
+        if(!hasPermission) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
+        const profileId = parseInt(req.params.id);
+        const offset = parseInt(req.query?.offset as string) || 0;
+        const limit = parseInt(req.query?.limit as string) || 10;
+
+        if(isNaN(profileId)) {
+            return res.status(400).json({ message: 'Invalid ID' });
+        }
+
+
+        try {
+            const rawPosts = await postsService.getPostsByProfileId(profileId, offset, limit);
+            const posts: PostDTO[] = rawPosts.map((row) => ({
+                id: row.id,
+                profileId: row.profile_id,
+                parentId: row.parent_id,
+                content: row.content,
+                mediaUrl: row.media_url,
+                createdAt: row.created_at,
+            }));
+
+            const enriched = await Promise.all(posts.map(p => formatPostWithCounts(p, user.id)));
+            return res.status(200).json({ posts: enriched });
+        } catch (error) {
+            console.error('Error fetching posts:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
     }
 
-    /**
-     * Gets the user
-     * Checks the user has permission
-     * returns
-     *
-     * @param req
-     * @param permission
-     */
-    async handleRequest(req: Request, permission: Permissions) {
+    async getPostReplies(req: Request, res: Response) {
+        const user = await authService.fromRequest(req, res);
+        if (!user?.id) {
+            return res.status(401).json({ message: 'User not found' });
+        }
+
+        const postId = parseInt(req.params.id);
+        if (isNaN(postId)) {
+            return res.status(400).json({ message: 'Invalid post ID' });
+        }
+        const offset = parseInt(req.query.offset as string) || 0;
+        const limit = parseInt(req.query.limit as string) || 10;
+        try {
+            const enriched = await postsService.getRepliesByParentId(postId, user.id, offset, limit);
+            res.status(200).json({ posts: enriched });
+        } catch (err) {
+            console.error('Failed to fetch replies:', err);
+            res.status(500).json({ message: 'Internal server error' });
+        }
+    }
+
+    async getLatestPosts(req: Request, res: Response) {
+
+        const user = await authMiddleware.checkUserPermission(req, res, Permissions.READ_POST);
+        if (!user?.id) return res.status(401).json({ message: 'Unauthorized' });
+
+        const offset = parseInt(req.query.offset as string) || 0;
+        const limit = parseInt(req.query.limit as string) || 10;
+        debugMode.log(`Offset: ${offset}, limit: ${limit}`);
+        try {
+            const posts = await postsService.getLatestEnrichedPosts(user.id!, offset, limit);
+            debugMode.log(`Posts ${JSON.stringify(posts)}`);
+            return res.status(200).json({ posts });
+        } catch (err) {
+            console.error('Error fetching posts:', err);
+            res.status(500).json({ error: 'Failed to fetch posts' });
+        }
+    }
+
+    async addLike(req: Request, res: Response) {
+        try {
+            const user = await authMiddleware.checkUserPermission(req, res, Permissions.LIKE_POST);
+
+            const postId = parseInt(req.params.id);
+            const profileId = user.id;
+
+            await postsService.addLike(profileId!, postId);
+            res.status(200).json({ message: 'Post liked' });
+        } catch (err) {
+            // Do nothing — response already sent in helper
+        }
 
 
+    }
+
+    async deleteLike(req: Request, res: Response) {
+        const user = await authMiddleware.checkUserPermission(req, res, Permissions.LIKE_POST);
+
+        const postId = parseInt(req.params.id);
+        const profileId = user.id;
+
+        await postsService.removeLike(profileId!, postId);
+        res.status(200).json({ message: 'Post unliked' });
+    }
+
+    async hasLiked(req: Request, res: Response) {
+        const user = await authMiddleware.checkUserPermission(req, res, Permissions.LIKE_POST);
+
+        const result = await postsService.hasLiked(user.id, parseInt(req.params.id));
+
+        res.status(200).json({ liked: result });
     }
 }
 

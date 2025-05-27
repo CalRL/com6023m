@@ -13,7 +13,7 @@ export interface User {
 
 // Data Transfer Object (DTO) for creating or updating a user
 export interface UserDTO {
-  id?: number;
+  id: number;
   email?: string;
   username?: string;
   password_hash?: string;

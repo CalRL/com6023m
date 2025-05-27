@@ -1,13 +1,10 @@
-import database, { postgres } from '../config/database.js';
-import { User, UserDTO } from '../models/UserModel.js';
-import { defaultPermissions } from "../User/Permissions.js";
-import { profileService } from "./ProfileService.js";
-import PermissionsService from "./PermissionsService.js";
-import {usernameFromEmail} from "../utils/UserUtils.js";
-import {hashPassword} from "../utils/PasswordUtils.js";
-import { userRepository } from "../repository/UserRepository.js";
-import {ProfileDTO} from "../models/profile.model.js";
-import {debugMode} from "../utils/DebugMode.js";
+import database from '../config/database.js';
+import {User, UserDTO} from '../models/UserModel.js';
+import {profileService} from './ProfileService.js';
+import PermissionsService from './PermissionsService.js';
+import {hashPassword} from '../utils/PasswordUtils.js';
+import {ProfileDTO} from '../models/ProfileModel.js';
+import {debugMode} from '../utils/DebugMode.js';
 
 /**
  * UserService class for managing user operations.
@@ -32,74 +29,52 @@ export class UserService {
    * @throws {Error} - If the user creation fails.
    */
   async createUser(username: string, email: string, password: string): Promise<UserDTO> {
-    try {
-      /**
-       * todo: find a better way to do this
-       * maybe null this and have a secondary page to create username? or all in the same form?
-       */
-      console.log(`Service Username: ${username}`);
-      console.log(`Email: ${email}`);
-      console.log(`Password: ${password}`);
-      const password_hash = await hashPassword(password);
+    const password_hash = await hashPassword(password);
 
-      const user: Partial<User> = {
-          email: email,
-          username: username,
-          password_hash: password_hash
-      }
+    const user = {
+        email: email,
+        username: username,
+        password_hash: password_hash
+    };
 
-      const createdUser = await userRepository.create(user);
-      console.log("UserService: ", JSON.stringify(createdUser));
-      /**
-       * const result = await database<User[]>`
-       *                     INSERT INTO users (email, username, password_hash)
-       *                     VALUES (${email}, ${username}, ${password_hash})
-       *                     RETURNING *;
-       *                 `;
-       * const createdUser = result[0];
-       */
+    const result = await database`
+                  INSERT INTO users (email, username, password_hash)
+                  VALUES (${email}, ${username}, ${password_hash})
+                  RETURNING *;
+              `;
+    if(!result || result[0] == null) {
+      throw new Error('User creation failed');
+    }
 
-      if (!createdUser || !createdUser.id || !createdUser.username)  {
-        throw new Error('User creation failed');
-      }
+    const createdUser = result[0] as UserDTO;
 
-      const profile: ProfileDTO = {
-        id: createdUser.id,
-        displayName: createdUser.username,
-      }
+    if (!createdUser || !createdUser.id || !createdUser.username)  {
+      throw new Error('User creation failed');
+    }
 
-      console.log('Creating defaults');
-      await profileService.createProfile(profile);
-      await PermissionsService.createDefaultPermissions(createdUser.id);
-      console.log('Created defaults');
+    const profile: ProfileDTO = {
+      id: createdUser.id,
+      displayName: createdUser.username,
+    };
 
-      const userDTO: UserDTO = {
-        id: createdUser.id,
-        email: createdUser.email,
-        username: createdUser.username,
-        created_at: createdUser.created_at,
-        first_name: createdUser.first_name,
-        last_name: createdUser.last_name,
-        phone_ext: createdUser.phone_ext,
-        phone_number: createdUser.phone_number,
-        birthday: createdUser.birthday,
-      }
+    console.log('Creating defaults');
+    await profileService.createProfile(profile);
+    await PermissionsService.createDefaultPermissions(createdUser.id);
+    console.log('Created defaults');
 
-      return userDTO;
+    const userDTO: UserDTO = {
+      id: createdUser.id,
+      email: createdUser.email,
+      username: createdUser.username,
+      created_at: createdUser.created_at,
+      first_name: createdUser.first_name,
+      last_name: createdUser.last_name,
+      phone_ext: createdUser.phone_ext,
+      phone_number: createdUser.phone_number,
+      birthday: createdUser.birthday,
+    };
 
-    } catch (error: any) {
-      const code = error.code;
-      switch(code) {
-        case '23505': {
-          console.error('User already exists:', error.detail);
-          throw new Error('User already exists with this email or username.');
-        }
-        default: {
-          console.error('Error creating user:', error);
-          throw new Error('User creation failed');
-        }
-      }
-  }
+    return userDTO;
   }
 
   /**
@@ -114,7 +89,7 @@ export class UserService {
       `;
       return result[0] || null;
     } catch (error) {
-      console.error("UserService: Error finding user:", error);
+      console.error('UserService: Error finding user:', error);
       throw error;
     }
   }
@@ -123,7 +98,7 @@ export class UserService {
     try {
       const result = await database`
         SELECT username FROM users WHERE id = ${id};
-      `
+      `;
       if(!result || result.length === 0) {
         console.error(`User with id ${id} does not exist`);
         return;
@@ -131,7 +106,7 @@ export class UserService {
 
       return result[0];
     } catch (error) {
-      console.error("UserService: Error finding user:", error);
+      console.error('UserService: Error finding user:', error);
       throw error;
     }
   }
@@ -140,8 +115,10 @@ export class UserService {
    * Retrieves all users from the database.
    * @returns {Promise<User[]>} - A list of users.
    */
-  async findAll(): Promise<User[]> {
-    return await userRepository.findAll();
+  async findAll(): Promise<UserDTO[]> {
+    return await database<UserDTO[]>`
+          SELECT * FROM users;
+        `;
   }
 
   /**
@@ -151,19 +128,39 @@ export class UserService {
    * TODO: can postgres do partial updates?
    *
    * @param {number} id - The ID of the user to update.
-   * @param {Partial<User>} user - The fields to update.
-   * @returns {Promise<User | null>} - The updated user if successful, otherwise null.
+   * @param {Partial<User>} userDTO - The fields to update.
+   * @returns {Promise<UserDTO | null>} - The updated user if successful, otherwise null.
    * @throws {Error} - If no fields are provided for update.
    */
-  async update(id: number, user: Partial<User>): Promise<User | null> {
-    console.log("In the service: " + JSON.stringify(user))
-    const updatedUser: User | null = await userRepository.update(id, user);
+  async update(id: number, userDTO: UserDTO): Promise<UserDTO> {
+    const [existingUser] = await database`
+      SELECT * FROM users WHERE id = ${id}
+    `;
 
-    if(!updatedUser) {
-      throw new Error(`User with id ${id} not found or update failed.`)
+
+    if (!existingUser) {
+      throw new Error(`User with id ${id} not found`);
     }
 
-    return updatedUser;
+    const updatedUser = {
+      ...existingUser,
+      ...userDTO,
+    };
+
+    const result = await database`
+    UPDATE users
+    SET
+      first_name = ${updatedUser.first_name ?? null},
+      last_name = ${updatedUser.last_name ?? null},
+      email = ${updatedUser.email ?? null},
+      phone_ext = ${updatedUser.phone_ext ?? null},
+      phone_number = ${updatedUser.phone_number ?? null},
+      birthday = ${updatedUser.birthday ?? null}
+    WHERE id = ${id}
+    RETURNING *
+  `;
+
+    return result[0] as UserDTO || null;
   }
 
   /**
@@ -173,20 +170,30 @@ export class UserService {
    */
   async deleteById(id: number): Promise<boolean> {
     try {
-      return await userRepository.deleteById(id);
+      const result = await database`
+          DELETE FROM users WHERE id = ${id};
+        `;
+      return result.count > 0;
     } catch (error) {
-      throw new Error((error as Error).message)
+      throw new Error((error as Error).message);
     }
   }
 
-  async findByEmail(email: string): Promise<User | undefined> {
-    return await userRepository.findByEmail(email);''
+  async findByEmail(email: string): Promise<UserDTO | undefined> {
+    try {
+      const result = await database<UserDTO[]>`
+              SELECT * FROM users WHERE email = ${email}
+            `;
+      return result[0] as UserDTO || null;
+    } catch (error) {
+      console.error('UserRepository: Error finding user:', error);
+    }
   }
 
   async getFields(userId: number, fields: Record<string, boolean>) {
     // Extract field names from the input object
     const fieldNames = Object.keys(fields);
-    debugMode.log("Fields: " + JSON.stringify(fieldNames));
+    debugMode.log('Fields: ' + JSON.stringify(fieldNames));
 
     // Define disallowed fields
     const disallowedFields = ['password_hash', 'id'];
@@ -214,7 +221,7 @@ export class UserService {
 
     // If no fields remain after filtering
     if (safeColumns.length === 0) {
-      debugMode.log("No safe fields")
+      debugMode.log('No safe fields');
       return null;
     }
 
@@ -228,12 +235,8 @@ export class UserService {
       WHERE id = ${userId}
     `;
 
-    try {
       const result = await query;
       return result[0] || null;
-    } catch(error) {
-      throw error;
-    }
   }
 
   async updateFields(userId: number, fields: Record<string, any>) {
@@ -257,59 +260,6 @@ export class UserService {
   }
 
 
-  async setFirstName(userId: number, name: string) {
-    await database`UPDATE users SET first_name = ${name} WHERE id = ${userId}`;
-  }
-
-  async setLastName(userId: number, name: string) {
-    await database`UPDATE users SET last_name = ${name} WHERE id = ${userId}`;
-  }
-
-  async setPhoneExt(userId: number, ext: number) {
-    await database`UPDATE users SET phone_ext = ${ext} WHERE id = ${userId}`;
-  }
-
-  async setPhoneNumber(userId: number, num: string) {
-    await database`UPDATE users SET phone_number = ${num} WHERE id = ${userId}`;
-  }
-
-  async setBirthday(userId: number, birthday: Date) {
-    await database`UPDATE users SET birthday = ${birthday} WHERE id = ${userId}`;
-  }
-
-  async setPassword(userId: number, passwordHash: string) {
-    await database`UPDATE users SET password_hash = ${passwordHash} WHERE id = ${userId}`;
-  }
-
-  async getFirstName(userId: number): Promise<string> {
-    const [user] = await database`SELECT first_name FROM users WHERE id = ${userId}`;
-    return user?.first_name ?? 'Not Specified';
-  }
-
-  async getLastName(userId: number): Promise<string> {
-    const [user] = await database`SELECT last_name FROM users WHERE id = ${userId}`;
-    return user?.last_name ?? 'Not Specified';
-  }
-
-  async getPhoneExt(userId: number): Promise<number> {
-    const [user] = await database`SELECT phone_ext FROM users WHERE id = ${userId}`;
-    return user?.phone_ext ?? 0;
-  }
-
-  async getPhoneNumber(userId: number): Promise<string> {
-    const [user] = await database`SELECT phone_number FROM users WHERE id = ${userId}`;
-    return user?.phone_number ?? 'Not Specified';
-  }
-
-  async getBirthday(userId: number): Promise<Date | null> {
-    const [user] = await database`SELECT birthday FROM users WHERE id = ${userId}`;
-    return user?.birthday ?? null;
-  }
-
-  async getPassword(userId: number): Promise<string> {
-    const [user] = await database`SELECT password_hash FROM users WHERE id = ${userId}`;
-    return user?.password_hash;
-  }
 
 }
 

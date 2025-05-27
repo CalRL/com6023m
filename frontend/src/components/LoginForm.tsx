@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axios';
 import useAuthStore from '../store/auth';
+import CenteredPage from "../pages/CenteredPage.tsx";
 
 const LoginForm: React.FC = () => {
     const [email, setEmail] = useState<string>('');
@@ -36,6 +37,7 @@ const LoginForm: React.FC = () => {
     };
     const boxClass = "block w-full border-neutral-500 p-2 mb-4 border rounded light:text-white"
     return (
+        <CenteredPage>
         <form onSubmit={handleLogin} className="p-4 bg-neutral-800 rounded-xl mt-8">
             <div className="mb-4 space-y-0 text-left ">
                 <h2 className="text-2xl ">Sign in</h2>
@@ -65,6 +67,7 @@ const LoginForm: React.FC = () => {
                 Login
             </button>
         </form>
+        </CenteredPage>
     );
 };
 

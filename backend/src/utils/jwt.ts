@@ -1,8 +1,13 @@
-// @ts-ignore
 import jwt from 'jsonwebtoken';
-import {DecodedToken} from "./authenticate.js";
+import { SignOptions } from 'jsonwebtoken';
 
-const secret = process.env.JWT_SECRET;
+const { sign, verify, decode } = jwt;
+import {DecodedToken} from './authenticate.js';
+import crypto from 'crypto';
+import blacklistService from '../services/BlacklistService.js';
+import {debugMode} from './DebugMode.js';
+
+const secret = process.env.JWT_SECRET!;
 const accessExpiresIn = process.env.JWT_ACCESS_EXPIRES_IN || '15m';
 const refreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
 
@@ -12,7 +17,12 @@ const refreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
  * @returns {string} - The signed JWT access token.
  */
 export function generateAccessToken(payload: object): string {
-    return jwt.sign(payload, secret, { expiresIn: accessExpiresIn });
+    const options: SignOptions = { expiresIn: accessExpiresIn as unknown as SignOptions['expiresIn']  };
+    return sign(
+        { ...payload, jti: crypto.randomUUID() },
+        secret as string,
+        options
+    );
 }
 
 /**
@@ -21,7 +31,12 @@ export function generateAccessToken(payload: object): string {
  * @returns {string} - The signed JWT refresh token.
  */
 export function generateRefreshToken(payload: object): string {
-    return jwt.sign(payload, secret, { expiresIn: refreshExpiresIn });
+    const options: SignOptions = { expiresIn: refreshExpiresIn as unknown as SignOptions['expiresIn'] };
+    return sign(
+        { ...payload, jti: crypto.randomUUID() },
+        secret as string,
+        options
+    );
 }
 
 /**
@@ -31,8 +46,15 @@ export function generateRefreshToken(payload: object): string {
  */
 export function verifyToken(token: string): object | null {
     try {
-        const decoded = jwt.verify(token, secret);
-        return decoded as DecodedToken;
+        const decoded = verify(token, secret) as DecodedToken;
+
+        const isBlacklisted = blacklistService.isTokenBlacklisted(decoded.jti!);
+        if (isBlacklisted) {
+            debugMode.log('Token is blacklisted');
+            return null;
+        }
+
+        return decoded;
     } catch (error) {
         return null;
     }
@@ -43,9 +65,9 @@ export function verifyToken(token: string): object | null {
  * @param {string} token - The token to decode.
  * @returns {object | null} - The decoded payload or null if invalid.
  */
-export function decodeToken(token: string): object | null {
+export function decodeToken(token: string){
     try {
-        return jwt.decode(token);
+        return decode(token);
     } catch (error) {
         return null;
     }

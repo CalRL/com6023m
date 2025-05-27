@@ -1,7 +1,6 @@
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
-console.log('API URL:', API_URL);
 /**
  * Creates an Axios instance for making HTTP requests to the backend API.
  *
@@ -34,7 +33,6 @@ axiosInstance.interceptors.request.use((config) => {
         if (token) {
             // Attach the token to the Authorization header
             config.headers.Authorization = `Bearer ${token}`;
-            console.log('Token attached to request:', token);
         }
     } catch (error) {
         console.error('Error attaching token to request:', error);

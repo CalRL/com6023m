@@ -1,18 +1,18 @@
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt.js';
 import { userService } from './UserService.js';
 import { verifyPassword } from '../utils/PasswordUtils.js';
-import {UserDTO} from "../models/UserModel.js";
-import permissionsService from "./PermissionsService.js";
+import {UserDTO} from '../models/UserModel.js';
+import permissionsService from './PermissionsService.js';
 import { Request, Response } from 'express';
-import {ErrorMessages} from "../utils/errors.js";
-import {authenticateToken} from "../utils/authenticate.js";
-import {isDecodedToken, WithUser} from "../middleware/AuthMiddleware.js";
-import {Permissions} from "../User/Permissions.js";
-import {debugMode} from "../utils/DebugMode.js";
+import {ErrorMessages} from '../utils/errors.js';
+import {authenticateToken} from '../utils/authenticate.js';
+import {isDecodedToken, WithUser} from '../middleware/AuthMiddleware.js';
+import {Permissions} from '../User/Permissions.js';
+import {debugMode} from '../utils/DebugMode.js';
 
 class AuthService {
     /**
-     * Registers a new user using the existing UserController's createUser method.
+     * Registers a new user using the existing UserService's createUser method.
      * @param {string} email - User email.
      * @param {string} password - User plain text password.
      * @returns {Promise<{ accessToken: string, refreshToken: string }>} - Generated tokens.
@@ -32,7 +32,7 @@ class AuthService {
     }
 
     /**
-     * Logs in a user using the UserService and returns tokens.
+     * Logs in a user using the UserService and returns refresh and access tokens.
      * @param {string} email - User email.
      * @param {string} password - User plain text password.
      * @returns {Promise<{ accessToken: string, refreshToken: string }>} - Generated tokens.
@@ -41,15 +41,15 @@ class AuthService {
         try {
             // Find the user by email
             const user = await userService.findByEmail(email);
-            if (!user) {
-                debugMode.log("No User")
+            if (!user || !user.password_hash) {
+                debugMode.log('No User');
                 throw new Error('Invalid credentials');
             }
 
-            // Verify the password
+
             const isMatch = await verifyPassword(password, user.password_hash);
             if (!isMatch) {
-                debugMode.log("No Match")
+                debugMode.log('No Match');
                 throw new Error('Invalid credentials');
             }
 
@@ -66,7 +66,7 @@ class AuthService {
     //todo: add res.status()
     async fromRequest(req: Request, res: Response): Promise<UserDTO> {
         const authHeader = req.headers.authorization;
-        const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
+        const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : req.cookies?.refreshToken;
 
         if(!token) {
             res.status(401).json({ message: `Forbidden: ${ErrorMessages.NO_TOKEN}` });
@@ -83,7 +83,7 @@ class AuthService {
 
         const user: UserDTO = (req as WithUser).user = {
             id: parseInt(decoded.id)
-        }
+        };
 
         console.log('From token: ', JSON.stringify(user));
 
@@ -125,7 +125,7 @@ class AuthService {
         const user = await this.fromRequest(req, res);
 
         if (!user || typeof user.id !== 'number') {
-            console.error("AuthMiddleware: User ID is undefined or invalid.");
+            console.error('AuthMiddleware: User ID is undefined or invalid.');
             res.status(500).json({ error: 'User not authenticated properly.' });
             return false;
         }

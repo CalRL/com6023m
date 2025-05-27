@@ -1,0 +1,72 @@
+version: '3'
+
+tasks:
+  install:
+    desc: Install dependencies
+    cmds:
+      - echo "[install] starting..."
+      - npm install
+      - echo "[install] completed."
+
+  lint:
+    desc: Lint code
+    cmds:
+      - echo "[lint] starting..."
+      - npx eslint . --ext .ts,.js --fix --quiet
+      - echo "[lint] completed."
+
+  test:
+    desc: Run tests
+    cmds:
+      - echo "[test] starting..."
+      - npm run test
+      - echo "[test] completed."
+
+  build:
+    desc: Build the project
+    cmds:
+      - echo "[build] starting..."
+      - npm run build
+      - echo "[build] completed."
+
+  deploy:win:
+    desc: Deploy the app as a Docker container for windows
+    cmds:
+      - echo "[deploy] stopping old container (if any)..."
+      - docker stop com6023m-backend || true
+      - docker rm com6023m-backend || true
+      - echo "[deploy] building Docker image..."
+      - docker build -t com6023m-backend-image .
+      - echo "[deploy] starting new container..."
+      - docker run --rm --name com6023m-backend --network com6023m_default -p 3001:3001 --env-file .env com6023m-backend-image
+      - echo "[deploy] done."
+
+  deploy:
+    desc: Deploy the app as a Docker container
+    cmds:
+      - echo "[deploy] stopping old container (if any)..."
+      - sudo docker stop com6023m-backend || true
+      - sudo docker rm com6023m-backend || true
+      - echo "[deploy] building Docker image..."
+      - sudo docker build -t com6023m-backend-image .
+      - echo "[deploy] starting new container..."
+      - sudo docker run --rm --name com6023m-backend --network com6023m_default -p 3001:3001 --env-file .env com6023m-backend-image
+      - echo "[deploy] done."
+
+  ci:windows:
+    desc: Full CI pipeline for windows
+    cmds:
+      - task install
+      - task lint
+      - task test
+      - task build
+      - task deploy:win
+
+  ci:
+    desc: Full CI pipeline
+    cmds:
+      - task install
+      - task lint
+      - task test
+      - task build
+      - task deploy

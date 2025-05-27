@@ -1,3 +1,5 @@
+import {ProfileDTO} from './ProfileModel.js';
+
 export interface PostDTO {
     id?: number;
     profileId: number;
@@ -5,8 +7,16 @@ export interface PostDTO {
     content: string;
     mediaUrl?: string | null;
     createdAt?: string;
+    like_count?: number;
+    bookmark_count?: number;
 }
 
-export interface Post {
-
-}
+export type EnrichedPost = {
+    post: PostDTO & {
+        likeCount: number;
+        bookmarkCount: number;
+        liked: boolean;
+        bookmarked: boolean;
+    };
+    profile: ProfileDTO;
+};

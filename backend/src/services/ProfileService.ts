@@ -1,10 +1,10 @@
 import database from '../config/database.js';
-import { ProfileDTO } from "../models/profile.model.js";
+import { ProfileDTO } from '../models/ProfileModel.js';
 
 class ProfileService {
     async createProfile(profile: ProfileDTO): Promise<void> {
-        const userId = profile.id
-        const displayName = profile.displayName
+        const userId = profile.id;
+        const displayName = profile.displayName;
         try {
             await database`
                 INSERT INTO profiles (id, display_name)
@@ -12,7 +12,7 @@ class ProfileService {
             `;
         } catch (error) {
             console.error(`Error creating profile for user ${userId}:`, error);
-            throw new Error('Error creating profile');
+            throw error;
         }
     }
 
@@ -23,101 +23,88 @@ class ProfileService {
      */
     async getProfileById(profileId: number): Promise<ProfileDTO | null> {
         try {
-            const result = await database<ProfileDTO[]>`
-                SELECT * FROM profiles WHERE id = ${profileId};
+            const result = await database`
+                SELECT
+                    p.*,
+                    u.username
+                FROM profiles p
+                         JOIN users u ON u.id = p.id
+                WHERE p.id = ${profileId};
             `;
-            return result[0] || null;
+
+            const row = result[0];
+            if (!row) return null;
+
+            return {
+                id: row.id,
+                displayName: row.display_name,
+                avatarUrl: row.avatar_url ?? undefined,
+                location: row.location ?? undefined,
+                username: row.username ?? undefined,
+                bio: row.bio ?? undefined,
+                website: row.website ?? undefined,
+                isPrivate: row.is_private,
+                coverImageUrl: row.cover_image_url ?? undefined,
+                joinedAt: row.joined_at ?? undefined
+            };
         } catch (error) {
             throw new Error(`Error: ${error}`);
         }
     }
 
-    async getDisplayNameById(profileId: number): Promise<ProfileDTO> {
-        try {
-            const result = await database<ProfileDTO[]>`
-                SELECT display_name FROM profiles WHERE id = ${profileId};
-            `;
-            return result[0] || null;
-        } catch(error) {
-            throw error;
+    async updateFields(userId: number, fields: Record<string, any>) {
+        const disallowedFields = ['joined_at', 'id', 'username', 'joinedAt']; // don't update username here
+
+        const containsDisallowed = Object.keys(fields).some(key => disallowedFields.includes(key));
+        if (containsDisallowed) {
+            throw new Error(`Update contains disallowed fields: ${disallowedFields.join(', ')}`);
         }
+
+        const safeEntries = Object.entries(fields).filter(
+            ([key]) => !disallowedFields.includes(key)
+        );
+
+        if (safeEntries.length === 0) {
+            throw new Error('No valid fields to update');
+        }
+
+        const toSnakeCase = (str: string) =>
+            str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+
+        const safeFields = Object.fromEntries(
+            safeEntries.map(([key, value]) => [toSnakeCase(key), value])
+        );
+
+        await database`
+        UPDATE profiles
+        SET ${database(safeFields)}
+        WHERE id = ${userId}
+      `;
+
+        const [row] = await database`
+        SELECT p.*, u.username
+        FROM profiles p
+        JOIN users u ON u.id = p.id
+        WHERE p.id = ${userId}
+      `;
+
+
+        if (!row) return null;
+
+        return {
+            id: row.id,
+            displayName: row.display_name,
+            avatarUrl: row.avatar_url ?? undefined,
+            location: row.location ?? undefined,
+            username: row.username ?? undefined,
+            bio: row.bio ?? undefined,
+            website: row.website ?? undefined,
+            isPrivate: row.is_private,
+            coverImageUrl: row.cover_image_url ?? undefined,
+            joinedAt: row.joined_at ?? undefined
+        };
     }
 
-    async getJoinDateById(profileId: number): Promise<ProfileDTO> {
-        try {
-            const result = await database<ProfileDTO[]>`
-                SELECT joined_at FROM profiles WHERE id = ${profileId};
-            `;
-            return result[0] || null;
-        } catch(error) {
-            throw error;
-        }
-    }
-
-    async getBioById(profileId: number): Promise<ProfileDTO> {
-        try {
-            const result = await database<ProfileDTO[]>`
-                SELECT bio FROM profiles WHERE id = ${profileId};
-            `;
-            return result[0] || null;
-        } catch(error) {
-            throw error;
-        }
-    }
-
-    async getWebsiteById(profileId: number): Promise<ProfileDTO> {
-        try {
-            const result = await database<ProfileDTO[]>`
-                SELECT website FROM profiles WHERE id = ${profileId};
-            `;
-            return result[0] || null;
-        } catch(error) {
-            throw error;
-        }
-    }
-
-    async getAvatarById(profileId: number) {
-        try {
-            const result = await database<ProfileDTO[]>`
-                SELECT avatar_url FROM profiles WHERE id = ${profileId};
-            `;
-            return result[0] || null;
-        } catch(error) {
-            throw error;
-        }
-    }
-
-    async getPrivacyById(profileId: number) {
-        try {
-            const result = await database<ProfileDTO[]>`
-                SELECT is_private FROM profiles WHERE id = ${profileId};
-            `;
-            return result[0] || null;
-        } catch(error) {
-            throw error;
-        }
-    }
-
-    async getBannerById(profileId: number) {
-        try {
-            const result = await database<ProfileDTO[]>`
-                SELECT cover_image_url FROM profiles WHERE id = ${profileId};
-            `;
-            return result[0] || null;
-        } catch(error) {
-            throw error;
-        }
-    }
-    async getLocationById(profileId: number) {
-        try {
-            const result = await database<ProfileDTO[]>`
-                SELECT location FROM profiles WHERE id = ${profileId};
-            `;
-            return result[0] || null;
-        } catch(error) {
-            throw error;
-        }
-    }
 }
 
 export const profileService = new ProfileService();

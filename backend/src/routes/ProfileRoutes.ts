@@ -1,13 +1,13 @@
 import express from 'express';
 import  profileController from '../controllers/ProfileController.js';
 import { tokenMiddleware } from '../middleware/AuthMiddleware.js';
-import {asyncHandler} from "../utils/asyncHandler.js";
+import {asyncHandler} from '../utils/asyncHandler.js';
 
 const router = express.Router();
 
 // Protected routes through the middleware
 router.get('/', tokenMiddleware, asyncHandler(profileController.getProfile));
-
+router.put('/', tokenMiddleware, asyncHandler(profileController.updateProfile));
 router.get('/:id/username', tokenMiddleware, asyncHandler(profileController.getUsername));
 router.get('/:id', tokenMiddleware, asyncHandler(profileController.getProfileById));
 

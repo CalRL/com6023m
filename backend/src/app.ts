@@ -1,32 +1,34 @@
 import dotenv from 'dotenv';
 
-import './config/config';
-dotenv.config({ path: "../.env" });
+import './config/config.js';
+dotenv.config({ path: '../.env' });
 
 import express, { Application, Request, Response } from 'express';
 
 import userRoutes from './routes/UserRoutes.js';
 import authRoutes from './routes/AuthRoutes.js';
 import profileRoutes from './routes/ProfileRoutes.js';
-import postRoutes from "./routes/PostRoutes.js";
+import postRoutes from './routes/PostRoutes.js';
 
-// @ts-ignore
+// @ts-expect-error - no @types package
 import cookieParser from 'cookie-parser';
-// @ts-ignore
+// @ts-expect-error - no @types package
 import cors from 'cors';
-import {debugMode} from "./utils/DebugMode.js";
+import {debugMode} from './utils/DebugMode.js';
+import bookmarkRoutes from './routes/BookmarkRoutes.js';
+import likeRoutes from './routes/LikeRoutes.js';
 
 // THis will run only if DEBUG_MODE is set to true in ENV
-debugMode.log("Running in debug mode!");
+debugMode.log('Running in debug mode!');
 
-console.log("🔍 app.ts starting up");
+console.log('🔍 app.ts starting up');
 
 
 const app: Application = express();
 const PORT = process.env.EXPRESS_PORT;
 
-if(PORT == "" || PORT == null) {
-    throw new Error("Cannot start server, port is null");
+if(PORT == '' || PORT == null) {
+    throw new Error('Cannot start server, port is null');
 }
 
 
@@ -64,6 +66,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/posts', postRoutes);
+app.use('/api/bookmarks', bookmarkRoutes);
+app.use('/api/likes', likeRoutes);
 
 app.listen(parseInt(PORT), '0.0.0.0', () => {
   console.log(`Server running on http://localhost:${PORT}`);

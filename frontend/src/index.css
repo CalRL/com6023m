@@ -56,8 +56,8 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-@layer base {
-  html, body {
-    @apply min-h-screen bg-lightBg text-black dark:bg-[#171717] dark:text-white transition-colors;
-  }
-}
+/*@layer base {*/
+/*  html, body {*/
+/*    @apply min-h-screen bg-lightBg text-black dark:bg-[#171717] dark:text-white transition-colors;*/
+/*  }*/
+/*}*/

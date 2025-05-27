@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import { authService } from '../services/AuthService.js';
-import {generateAccessToken, verifyToken} from "../utils/jwt.js";
-import authMiddleware from "../middleware/AuthMiddleware.js";
-import {DecodedToken} from "../utils/authenticate.js";
+import {generateAccessToken, verifyToken} from '../utils/jwt.js';
+import authMiddleware from '../middleware/AuthMiddleware.js';
+import {DecodedToken} from '../utils/authenticate.js';
 
 /**
  * Handles user registration.
@@ -16,6 +16,7 @@ export async function registerController(req: Request, res: Response) {
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: true,
+            sameSite: 'strict',
             maxAge: sevenDays,
         });
         res.status(201).json({ accessToken });
@@ -35,7 +36,7 @@ export async function loginController(req: Request, res: Response) {
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: true,
-            path: "/",
+            path: '/',
         });
         res.status(200).json({ accessToken });
     } catch (error: any) {

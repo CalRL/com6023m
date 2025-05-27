@@ -1,4 +1,4 @@
-import { scryptSync, randomBytes, timingSafeEqual } from "crypto";
+import { scryptSync, randomBytes, timingSafeEqual } from 'crypto';
 
 /**
  *
@@ -7,8 +7,8 @@ import { scryptSync, randomBytes, timingSafeEqual } from "crypto";
  */
 export async function hashPassword(password: string): Promise<string> {
     try {
-        const salt = randomBytes(16).toString("base64");
-        const hash = scryptSync(password, salt, 64).toString("base64");
+        const salt = randomBytes(16).toString('base64');
+        const hash = scryptSync(password, salt, 64).toString('base64');
         return `${salt}:${hash}`; // Store salt and hash together
     } catch (error: unknown) {
         throw new Error(`Error hashing password: ${(error as Error).message}`);
@@ -29,9 +29,9 @@ export async function verifyPassword(
     storedHash: string
 ): Promise<boolean> {
     try {
-        const [salt, hash] = storedHash.split(":");
+        const [salt, hash] = storedHash.split(':');
         const hashedBuffer = scryptSync(password, salt, 64);
-        const storedBuffer = Buffer.from(hash, "base64");
+        const storedBuffer = Buffer.from(hash, 'base64');
 
         return timingSafeEqual(hashedBuffer, storedBuffer);
     } catch (error: unknown) {
