@@ -138,7 +138,7 @@ describe('UserController', () => {
     });
 
     describe('UserController', () => {
-        
+
         afterEach(() => vi.restoreAllMocks());
 
         describe('updateUser', () => {
