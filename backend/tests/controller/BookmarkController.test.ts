@@ -20,7 +20,8 @@ vi.mock('../../src/services/BookmarkService', () => ({
 
 vi.mock('../../src/services/LikeService', () => ({
     default: {
-        isPostLiked: vi.fn()
+        isPostLiked: vi.fn(),
+        getLikeCount: vi.fn()
     }
 }));
 
@@ -107,7 +108,19 @@ describe('BookmarkController', () => {
         (likeService.isPostLiked as any).mockResolvedValue(true);
         (bookmarkService.isPostBookmarked as any).mockResolvedValue(true);
         (bookmarkService.getBookmarkCount as any).mockResolvedValue(2);
-        (profileService.getProfileById as any).mockResolvedValue({ id: 1, displayName: 'user' });
+        (likeService.getLikeCount as any).mockResolvedValue(0);
+        (profileService.getProfileById as any).mockResolvedValue({
+            id: 1,
+            displayName: 'user',
+            avatarUrl: '',
+            location: '',
+            username: 'user1',
+            bio: '',
+            website: '',
+            isPrivate: false,
+            coverImageUrl: '',
+            joinedAt: '2025-01-01T00:00:00.000Z'
+        });
 
         await bookmarkController.getUserBookmarks(req, res);
         expect(res.status).toHaveBeenCalledWith(200);
@@ -124,7 +137,18 @@ describe('BookmarkController', () => {
                         liked: true,
                         bookmarked: true
                     },
-                    profile: { id: 1, displayName: 'user' }
+                    profile: {
+                        id: 1,
+                        displayName: 'user',
+                        avatarUrl: '',
+                        location: '',
+                        username: 'user1',
+                        bio: '',
+                        website: '',
+                        isPrivate: false,
+                        coverImageUrl: '',
+                        joinedAt: '2025-01-01T00:00:00.000Z'
+                    }
                 }
             ]
         });

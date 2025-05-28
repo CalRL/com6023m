@@ -91,7 +91,7 @@ const RegisterForm: React.FC = () => {
         <form onSubmit={handleRegister} className="p-4 bg-neutral-200 dark:bg-neutral-800 rounded-xl mt-8">
     <div className="mb-4 space-y-0 text-left">
     <h2 className="text-2xl ">Sign up</h2>
-        <div>or <a href="/register">create an account</a></div>
+        <div>or <a href="/login">log in</a></div>
     </div>
 
         <input

@@ -115,18 +115,6 @@ describe('PostsController', () => {
         });
     });
 
-    describe('addLike', () => {
-        it('should add a like to a post', async () => {
-            const req = { params: { id: '1' } } as any;
-            const res = mockRes();
-            (authMiddleware.checkUserPermission as any).mockResolvedValue({ id: 1 });
-            (postsService.addLike as any).mockResolvedValue(undefined);
-
-            await postsController.addLike(req, res);
-            expect(res.status).toHaveBeenCalledWith(200);
-        });
-    });
-
     it('updateStatus should toggle status if admin', async () => {
         const req = {} as any;
         const res = mockRes();
@@ -162,24 +150,4 @@ describe('PostsController', () => {
         expect(res.status).toHaveBeenCalledWith(200);
     });
 
-    it('deleteLike should remove like', async () => {
-        const req = { params: { id: '1' } } as any;
-        const res = mockRes();
-        (authMiddleware.checkUserPermission as any).mockResolvedValue({ id: 1 });
-        (postsService.removeLike as any).mockResolvedValue(undefined);
-
-        await postsController.deleteLike(req, res);
-        expect(res.status).toHaveBeenCalledWith(200);
-    });
-
-    it('hasLiked should return like status', async () => {
-        const req = { params: { id: '1' } } as any;
-        const res = mockRes();
-        (authMiddleware.checkUserPermission as any).mockResolvedValue({ id: 1 });
-        (postsService.hasLiked as any).mockResolvedValue(true);
-
-        await postsController.hasLiked(req, res);
-        expect(res.status).toHaveBeenCalledWith(200);
-        expect(res.json).toHaveBeenCalledWith({ liked: true });
-    });
 });

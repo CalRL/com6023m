@@ -17,6 +17,7 @@ import cors from 'cors';
 import {debugMode} from './utils/DebugMode.js';
 import bookmarkRoutes from './routes/BookmarkRoutes.js';
 import likeRoutes from './routes/LikeRoutes.js';
+import adminRoutes from "./routes/AdminRoutes.js";
 
 // THis will run only if DEBUG_MODE is set to true in ENV
 debugMode.log('Running in debug mode!');
@@ -42,7 +43,7 @@ app.use(cors({
         'https://callumburnsoregan.com'
     ],
     credentials: true,  // Allow cookies and headers
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
@@ -68,6 +69,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/bookmarks', bookmarkRoutes);
 app.use('/api/likes', likeRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.listen(parseInt(PORT), '0.0.0.0', () => {
   console.log(`Server running on http://localhost:${PORT}`);

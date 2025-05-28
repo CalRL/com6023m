@@ -44,6 +44,6 @@ test('toggles like button and updates count', async () => {
     const likeButton = screen.getAllByRole('button')[0]; // first button is like
     fireEvent.click(likeButton);
 
-    expect(mockedAxios.post).toHaveBeenCalledWith('/posts/1/like', { withCredentials: true });
+    expect(mockedAxios.post).toHaveBeenCalledWith('/likes/1', { withCredentials: true });
 });
 

@@ -131,23 +131,6 @@ class ProfileController {
         return res.status(403).json({ message: 'Forbidden.' });
     }
 
-    /*
-    todo: make it Only self
-     */
-    async uploadAvatar(req: Request, res: Response) {}
-    async deleteAvatar(req: Request, res: Response) {}
-    async uploadBanner(req: Request, res: Response) {}
-    async deleteBanner(req: Request, res: Response) {}
-    async updateLocation(req: Request, res: Response) {}
-    async getLocation(req: Request, res: Response) {}
-
-    async updateBio(req: Request, res: Response) {}
-    async getBio(req: Request, res: Response) {}
-
-    //todo: make a privacy interface
-    async getPrivacy(req: Request, res: Response) {}
-    async updatePrivacy(req: Request, res: Response) {}
-
     async updateProfile(req: Request, res: Response) {
         try {
             const user = await authService.fromRequest(req, res);

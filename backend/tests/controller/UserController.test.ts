@@ -12,6 +12,8 @@ vi.mock('../../src/services/UserService', async () => {
             findById: vi.fn(),
             getFields: vi.fn(),
             updateFields: vi.fn(),
+            sanitizeFields: vi.fn(),
+            updatePassword: vi.fn()
         }
     }
 });
@@ -195,12 +197,24 @@ describe('UserController', () => {
 
         describe('getFields', () => {
             it('should return specific fields for a user', async () => {
-                const req = { params: { id: '1' }, body: { fields: { email: true } } } as any;
+                const req = {
+                    params: { id: '1' },
+                    body: { fields: { first_name: true } }
+                } as any;
+
                 const res = mockRes();
-                (userService.getFields as any).mockResolvedValue({ email: 'test@example.com' });
+
+                (authService.fromRequest as any).mockResolvedValue({ id: 1 });
+                (permissionsService.hasPermission as any).mockResolvedValue(true);
+                (userService.getFields as any).mockResolvedValue({ first_name: 'John' });
 
                 await userController.getFields(req, res);
+
                 expect(res.status).toHaveBeenCalledWith(200);
+                expect(res.json).toHaveBeenCalledWith({
+                    success: true,
+                    data: { first_name: 'John' }
+                });
             });
         });
 
@@ -208,11 +222,23 @@ describe('UserController', () => {
             it('should update allowed fields', async () => {
                 const req = { params: { id: '1' }, body: { fields: { first_name: 'John' } } } as any;
                 const res = mockRes();
-                (userService.updateFields as any).mockResolvedValue(true);
+
+                const sanitized = await userService.sanitizeFields({ first_name: 'John' });
+                (userService.updateFields as any).mockResolvedValue(sanitized);
+                (authService.fromRequest as any).mockResolvedValue({ id: 1 });
+                (permissionsService.hasPermission as any).mockResolvedValue(true);
+                (userService.sanitizeFields as any).mockResolvedValue({ first_name: 'John' });
+                (userService.updateFields as any).mockResolvedValue({ first_name: 'John' });
+
 
                 await userController.updateFields(req, res);
                 expect(res.status).toHaveBeenCalledWith(200);
+                expect(res.json).toHaveBeenCalledWith({
+                    success: true,
+                    message: 'User fields updated successfully'
+                });
             });
         });
+
     });
 });

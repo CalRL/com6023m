@@ -1,0 +1,923 @@
+{
+	"info": {
+		"_postman_id": "ed65f49d-e338-4bf3-a943-4f53c459de18",
+		"name": "com6023m",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "41194200"
+	},
+	"item": [
+		{
+			"name": "posts",
+			"item": [
+				{
+					"name": "Likes",
+					"item": [
+						{
+							"name": "Check like",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\": \"callum@callums.coms\",\r\n    \"password\": \"sekaical\"\r\n}"
+								},
+								"url": {
+									"raw": "https://callumburnsoregan.com/api/likes/18/",
+									"protocol": "https",
+									"host": [
+										"callumburnsoregan",
+										"com"
+									],
+									"path": [
+										"api",
+										"likes",
+										"18",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete like",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "https://callumburnsoregan.com/api/likes/18/",
+									"protocol": "https",
+									"host": [
+										"callumburnsoregan",
+										"com"
+									],
+									"path": [
+										"api",
+										"likes",
+										"18",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add like",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "https://callumburnsoregan.com/api/likes/18/",
+									"protocol": "https",
+									"host": [
+										"callumburnsoregan",
+										"com"
+									],
+									"path": [
+										"api",
+										"likes",
+										"18",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get likes count",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://callumburnsoregan.com/api/likes/18/count",
+									"protocol": "https",
+									"host": [
+										"callumburnsoregan",
+										"com"
+									],
+									"path": [
+										"api",
+										"likes",
+										"18",
+										"count"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Get Status",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://callumburnsoregan.com/api/posts/status",
+							"protocol": "https",
+							"host": [
+								"callumburnsoregan",
+								"com"
+							],
+							"path": [
+								"api",
+								"posts",
+								"status"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Status",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/posts/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"posts",
+								"status"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Post",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"post\": {\r\n        \"content\": \"message\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://callumburnsoregan.com/api/posts",
+							"protocol": "https",
+							"host": [
+								"callumburnsoregan",
+								"com"
+							],
+							"path": [
+								"api",
+								"posts"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Post By Id",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"post\": {\r\n        \"content\": \"message\"\r\n    }\r\n}"
+						},
+						"url": {
+							"raw": "https://callumburnsoregan.com/api/posts/18",
+							"protocol": "https",
+							"host": [
+								"callumburnsoregan",
+								"com"
+							],
+							"path": [
+								"api",
+								"posts",
+								"18"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Post By profileId + Params",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"post\": {\r\n        \"content\": \"message\"\r\n    }\r\n}"
+						},
+						"url": {
+							"raw": "https://callumburnsoregan.com/api/posts/1?offset=0&limit=10",
+							"protocol": "https",
+							"host": [
+								"callumburnsoregan",
+								"com"
+							],
+							"path": [
+								"api",
+								"posts",
+								"1"
+							],
+							"query": [
+								{
+									"key": "offset",
+									"value": "0"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete by id",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"post\": {\r\n        \"content\": \"message\"\r\n    }\r\n}"
+						},
+						"url": {
+							"raw": "https://callumburnsoregan.com/api/posts/1",
+							"protocol": "https",
+							"host": [
+								"callumburnsoregan",
+								"com"
+							],
+							"path": [
+								"api",
+								"posts",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Post replies by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://callumburnsoregan.com/api/posts/72/replies",
+							"protocol": "https",
+							"host": [
+								"callumburnsoregan",
+								"com"
+							],
+							"path": [
+								"api",
+								"posts",
+								"72",
+								"replies"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Latest Posts",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"post\": {\r\n        \"content\": \"message\"\r\n    }\r\n}"
+						},
+						"url": {
+							"raw": "https://callumburnsoregan.com/api/posts/",
+							"protocol": "https",
+							"host": [
+								"callumburnsoregan",
+								"com"
+							],
+							"path": [
+								"api",
+								"posts",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Fields",
+			"item": [
+				{
+					"name": "Update Fields",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"fields\": {\r\n        \"first_name\": \"Alice\",\r\n        \"last_name\": \"Billybob\",\r\n        \"phone_ext\": 44,\r\n        \"birthday\": \"1990-01-01\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://callumburnsoregan.com/api/users/43/fields",
+							"protocol": "https",
+							"host": [
+								"callumburnsoregan",
+								"com"
+							],
+							"path": [
+								"api",
+								"users",
+								"43",
+								"fields"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Fields",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"fields\": {\r\n    \"first_name\": true,\r\n    \"last_name\": true,\r\n    \"email\": true,\r\n    \"created_at\": true,\r\n    \"password_hash\": true\r\n  }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://callumburnsoregan.com/api/users/43/fields",
+							"protocol": "https",
+							"host": [
+								"callumburnsoregan",
+								"com"
+							],
+							"path": [
+								"api",
+								"users",
+								"43",
+								"fields"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"adminuser123@gmail.com\",\r\n    \"username\":\"adminuser123\",\r\n    \"password\": \"adminuser123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://callumburnsoregan.com/api/auth/register",
+							"protocol": "https",
+							"host": [
+								"callumburnsoregan",
+								"com"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"adminuser123@gmail.com\",\r\n    \"password\": \"adminuser123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://callumburnsoregan.com/api/auth/login",
+							"protocol": "https",
+							"host": [
+								"callumburnsoregan",
+								"com"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://callumburnsoregan.com/api/auth/check",
+							"protocol": "https",
+							"host": [
+								"callumburnsoregan",
+								"com"
+							],
+							"path": [
+								"api",
+								"auth",
+								"check"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "https://callumburnsoregan.com/api/auth/logout",
+							"protocol": "https",
+							"host": [
+								"callumburnsoregan",
+								"com"
+							],
+							"path": [
+								"api",
+								"auth",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Profiles",
+			"item": [
+				{
+					"name": "Get profiles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://callumburnsoregan.com/api/profile/23",
+							"protocol": "https",
+							"host": [
+								"callumburnsoregan",
+								"com"
+							],
+							"path": [
+								"api",
+								"profile",
+								"23"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get username",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://callumburnsoregan.com/api/profile/43/username",
+							"protocol": "https",
+							"host": [
+								"callumburnsoregan",
+								"com"
+							],
+							"path": [
+								"api",
+								"profile",
+								"43",
+								"username"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get self profile",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://callumburnsoregan.com/api/profile/",
+							"protocol": "https",
+							"host": [
+								"callumburnsoregan",
+								"com"
+							],
+							"path": [
+								"api",
+								"profile",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Bookmarks",
+			"item": [
+				{
+					"name": "Get bookmarks",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://callumburnsoregan.com/api/bookmarks/?offset=0&limit=10",
+							"protocol": "https",
+							"host": [
+								"callumburnsoregan",
+								"com"
+							],
+							"path": [
+								"api",
+								"bookmarks",
+								""
+							],
+							"query": [
+								{
+									"key": "offset",
+									"value": "0"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add bookmark",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "https://callumburnsoregan.com/api/bookmarks/16",
+							"protocol": "https",
+							"host": [
+								"callumburnsoregan",
+								"com"
+							],
+							"path": [
+								"api",
+								"bookmarks",
+								"16"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete bookmark",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "https://callumburnsoregan.com/api/bookmarks/18",
+							"protocol": "https",
+							"host": [
+								"callumburnsoregan",
+								"com"
+							],
+							"path": [
+								"api",
+								"bookmarks",
+								"18"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "IsBookmarked",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://callumburnsoregan.com/api/bookmarks/18",
+							"protocol": "https",
+							"host": [
+								"callumburnsoregan",
+								"com"
+							],
+							"path": [
+								"api",
+								"bookmarks",
+								"18"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "admin",
+			"item": [
+				{
+					"name": "get metrics",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Get user by id",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://callumburnsoregan.com/api/users/166",
+					"protocol": "https",
+					"host": [
+						"callumburnsoregan",
+						"com"
+					],
+					"path": [
+						"api",
+						"users",
+						"166"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "cal.ceo:3001/api/users/",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"first_name\": \"callum\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "cal.ceo:3001/api/users/",
+					"host": [
+						"cal",
+						"ceo"
+					],
+					"port": "3001",
+					"path": [
+						"api",
+						"users",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update User",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"phone_ext\": 44\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://callumburnsoregan.com/api/users/166",
+					"protocol": "https",
+					"host": [
+						"callumburnsoregan",
+						"com"
+					],
+					"path": [
+						"api",
+						"users",
+						"166"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete User",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\": \"sekaicalgaming\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://callumburnsoregan.com/api/users/51",
+					"protocol": "https",
+					"host": [
+						"callumburnsoregan",
+						"com"
+					],
+					"path": [
+						"api",
+						"users",
+						"51"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Permissions",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://callumburnsoregan.com/api/users/permissions",
+					"protocol": "https",
+					"host": [
+						"callumburnsoregan",
+						"com"
+					],
+					"path": [
+						"api",
+						"users",
+						"permissions"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"value": "",
+			"type": "string"
+		}
+	]
+}

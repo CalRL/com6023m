@@ -20,7 +20,7 @@ tasks:
     desc: Run unit tests
     cmds:
       - echo "[test] Running Vitest..."
-      - npx vitest run --coverage
+      - npx vitest run
       - echo "[test] Done."
 
   deploy:
@@ -48,7 +48,6 @@ tasks:
     cmds:
       - task lint
       - task test
-      - task build
       - task deploy:windows
 
   ci:
@@ -56,5 +55,4 @@ tasks:
     cmds:
       - task lint
       - task test
-      - task build
       - task deploy

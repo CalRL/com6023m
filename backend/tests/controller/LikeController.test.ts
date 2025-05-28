@@ -60,6 +60,7 @@ import LikeService from '../../src/services/LikeService.js';
 import { profileService } from '../../src/services/ProfileService.js';
 import formatPostWithCounts from '../../src/utils/post/PostUtils.js';
 import authMiddleware from '../../src/middleware/AuthMiddleware.js';
+import likeService from "../../src/services/LikeService.js";
 
 const mockRes = () => {
     const res: Partial<Response> = {};
@@ -115,14 +116,6 @@ describe('PostsController', () => {
         await postsController.getStatus(req, res);
         expect(res.status).toHaveBeenCalledWith(200);
         expect(res.json).toHaveBeenCalledWith({ status: 'Alive' });
-    });
-
-    it('addLike should call postsService.addLike', async () => {
-        const req = { params: { id: '1' } } as any;
-        const res = mockRes();
-        (authMiddleware.checkUserPermission as any).mockResolvedValue({ id: 1 });
-        await postsController.addLike(req, res);
-        expect(res.status).toHaveBeenCalledWith(200);
     });
 });
 

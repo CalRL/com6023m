@@ -121,59 +121,6 @@ class PostsService {
     }
 
     /**
-     * Add a like to a post by id
-     * @param profileId - the users profile id
-     * @param postId - the post id
-     */
-    async addLike(profileId: number, postId: number) {
-        await database`
-      INSERT INTO likes (profile_id, post_id)
-      VALUES (${profileId}, ${postId})
-      ON CONFLICT DO NOTHING
-    `;
-
-        await database`
-      UPDATE posts
-      SET like_count = (
-        SELECT COUNT(*) FROM likes WHERE post_id = ${postId}
-      )
-      WHERE id = ${postId}
-    `;
-    }
-
-    /**
-     * Remove a like from a post by id
-     * @param profileId - the user's profile id
-     * @param postId - the post id
-     */
-    async removeLike(profileId: number, postId: number) {
-    await database`
-      DELETE FROM likes
-      WHERE profile_id = ${profileId} AND post_id = ${postId}
-    `;
-
-    await database`
-      UPDATE posts
-      SET like_count = (
-        SELECT COUNT(*) FROM likes WHERE post_id = ${postId}
-      )
-      WHERE id = ${postId}
-    `;
-    }
-
-    /**
-     * Check if a profile has liked a post
-     * @param profileId - the user's profile id
-     * @param postId - the post id
-     */
-    async hasLiked(profileId: number, postId: number ) {
-    const result = await database`
-        SELECT 1 FROM likes WHERE profile_id = ${profileId} AND post_id = ${postId}
-    `;
-    return result.length > 0;
-    }
-
-    /**
      * Get message replies' by mesasge id
      * @param postId
      * @param profileId
@@ -254,7 +201,7 @@ class PostsService {
                     return null;
                 }
 
-                const liked = await this.hasLiked(userId, post.id);
+                const liked = await likeService.isPostLiked(userId, post.id);
                 const bookmarked = await bookmarkService.isPostBookmarked(userId, post.id);
                 const bookmarkCount = await bookmarkService.getBookmarkCount(post.id);
                 const likeCount = await likeService.getLikeCount(post.id);

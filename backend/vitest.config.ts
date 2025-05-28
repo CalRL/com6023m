@@ -4,7 +4,7 @@ export default defineConfig({
     test: {
         globals: true,
         setupFiles: ['./vitest.setup.ts'],
-        silent: true,
+        silent: false,
         maxConcurrency: 1,
         isolate: false,
         poolOptions: {

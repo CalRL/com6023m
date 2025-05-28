@@ -72,7 +72,9 @@ const PostFeed: React.FC<PostFeedProps> = ({
     };
 
     useEffect(() => {
-        setRefreshPostsCallback(() => refreshPosts);
+        if (setRefreshPostsCallback) {
+            setRefreshPostsCallback(() => refreshPosts);
+        }
     }, []);
 
     useEffect(() => {

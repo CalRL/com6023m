@@ -48,6 +48,7 @@ export const defaultPermissions: string[] = [
     Permissions.LIKE_POST,
     Permissions.LIKE_COMMENT,
     Permissions.DELETE_SELF,
+    Permissions.DELETE_POST,
     Permissions.READ_OTHER,
     Permissions.READ_POST
 ];

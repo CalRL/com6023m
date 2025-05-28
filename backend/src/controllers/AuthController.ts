@@ -1,11 +1,15 @@
 import { Request, Response } from 'express';
 import { authService } from '../services/AuthService.js';
-import {generateAccessToken, verifyToken} from '../utils/jwt.js';
-import authMiddleware from '../middleware/AuthMiddleware.js';
-import {DecodedToken} from '../utils/authenticate.js';
+import { generateAccessToken, verifyToken } from '../utils/jwt.js';
+import { DecodedToken } from '../utils/authenticate.js';
+import {userService} from '../services/UserService.js';
+import {hashPassword, verifyPassword} from '../utils/PasswordUtils.js';
+import blacklistService from '../services/BlacklistService.js';
 
 /**
  * Handles user registration.
+ * @param {Request} req - Express request object containing username, email, and password.
+ * @param {Response} res - Express response object for returning access token and setting refresh cookie.
  */
 export async function registerController(req: Request, res: Response) {
     const { username, email, password } = req.body;
@@ -27,6 +31,8 @@ export async function registerController(req: Request, res: Response) {
 
 /**
  * Handles user login.
+ * @param {Request} req - Express request object with login credentials.
+ * @param {Response} res - Express response object returning access token and setting refresh cookie.
  */
 export async function loginController(req: Request, res: Response) {
     const { email, password } = req.body;
@@ -45,8 +51,15 @@ export async function loginController(req: Request, res: Response) {
 }
 
 class AuthController {
-
-    async check(req: Request, res: Response) {
+    /**
+     * Checks if the user is authenticated by verifying the access or refresh token.
+     * If access token is valid, returns basic user info.
+     * If only refresh token is valid, issues a new access token.
+     * @param {Request} req - Express request object with auth headers and cookies.
+     * @param {Response} res - Express response object returning user info and new access token if applicable.
+     * @returns {Promise<Response>} JSON response with user ID, email, and optionally new access token.
+     */
+    async check(req: Request, res: Response): Promise<Response> {
         const authHeader = req.headers.authorization;
         const accessToken = authHeader?.startsWith('Bearer ')
             ? authHeader.split(' ')[1]
@@ -54,7 +67,7 @@ class AuthController {
         const refreshToken = req.cookies?.refreshToken;
         const decodedAccess: DecodedToken | null = accessToken ? verifyToken(accessToken) as DecodedToken | null : null;
 
-        if(decodedAccess) {
+        if (decodedAccess) {
             return res.status(200).json({
                 id: decodedAccess.id,
                 email: decodedAccess.email,
@@ -83,7 +96,13 @@ class AuthController {
         });
     }
 
-    async logout(req: Request, res: Response) {
+    /**
+     * Logs out the user by clearing the refresh token cookie.
+     * @param {Request} req - Express request object.
+     * @param {Response} res - Express response object sending 204 No Content.
+     * @returns {Promise<Response>} No content response.
+     */
+    async logout(req: Request, res: Response): Promise<Response> {
         res.clearCookie('refreshToken', {
             httpOnly: true,
             secure: true
@@ -91,11 +110,22 @@ class AuthController {
 
         return res.status(204).send();
     }
-    async refresh(req: Request, res: Response) {
-        const refreshToken = null;
+
+    /**
+     * Refreshes the access token using the user context retrieved from the refresh token.
+     * @param {Request} req - Express request object.
+     * @param {Response} res - Express response object returning a new access token.
+     * @returns {Promise<Response>} JSON response with new access token.
+     */
+    async refresh(req: Request, res: Response): Promise<Response> {
         const user = await authService.fromRequest(req, res);
         const accessToken = generateAccessToken({ id: user.id, email: user.email });
+
+        return res.status(200).json({ accessToken });
     }
+
+
+
 }
 
 export default new AuthController();

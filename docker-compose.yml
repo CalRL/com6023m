@@ -11,24 +11,6 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
 
-  test-db:
-    image: postgres:17.2
-    container_name: com6023m_test_db
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    ports:
-      - "127.0.0.1:5433:5432"
-    volumes:
-      - ./test-db/schema.sql:/docker-entrypoint-initdb.d/init.sql:ro
-      - test-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
-      interval: 1s
-      timeout: 5s
-      retries: 5
-
 
   pgadmin:
     image: dpage/pgadmin4
@@ -43,20 +25,6 @@ services:
       - db
     restart: always
 
-  # frontend:
-  #   image: node:18
-  #   working_dir: /app
-  #   command: /bin/sh -c "npm install && npm start"
-  #   volumes:
-  #     - ./frontend:/app
-  #   ports:
-  #     - "3001:3000"
-  #   environment:
-  #     REACT_APP_API_URL: http://localhost:5000
-  #   depends_on:
-  #     - express
-
 volumes:
   db-data:
-  test-db-data:
   pgadmin_data:

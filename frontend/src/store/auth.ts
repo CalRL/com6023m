@@ -6,6 +6,7 @@ import axios from "../api/axios.ts";
  * Represents a user object decoded from JWT.
  */
 interface User {
+    id: number;
     email: string;
 }
 
@@ -60,7 +61,7 @@ const useAuthStore = create<AuthState>((set) => ({
             }
 
             set({
-                user: { email: data.email },
+                user: { id: data.id, email: data.email },
                 token: data.accessToken ?? null,
                 isAuthenticated: true,
                 loading: false,

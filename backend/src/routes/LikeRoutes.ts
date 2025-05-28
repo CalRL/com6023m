@@ -12,6 +12,4 @@ router.delete('/:id', authMiddleware.tokenMiddleware, asyncHandler(likeControlle
 router.get('/:id', authMiddleware.tokenMiddleware, asyncHandler(likeController.hasLiked));
 router.get('/:id/count', asyncHandler(likeController.getLikeCount));
 
-// todo
-
 export default router;

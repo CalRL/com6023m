@@ -6,22 +6,40 @@ import { PostProps } from "./PostProps.ts";
 import { ProfileProps } from "../profile/ProfileProps.tsx";
 import ReplyModal from "../modal/ReplyModal.tsx";
 import { useNavigate } from "react-router-dom";
+import useAuthStore from "../../store/auth.ts";
 
-const Post: React.FC<{ post: PostProps, profile: ProfileProps }> = ({ post, profile }) => {
+interface PostComponentProps {
+    post: PostProps;
+    profile: ProfileProps;
+    onReplySuccess?: () => void;
+}
+
+const Post: React.FC<PostComponentProps> = ({ post, profile, onReplySuccess }) => {
     const [isLiked, setLiked] = useState(post.liked ?? false);
     const [isBookmarked, setBookmarked] = useState(post.bookmarked ?? false);
     const [likes, setLikes] = useState(post.likeCount ?? 0);
     const [bookmarks, setBookmarks] = useState(post.bookmarkCount ?? 0);
     const [replyOpen, setReplyOpen] = useState(false);
     const [replyContent, setReplyContent] = useState("");
+    const currentUserId = useAuthStore(state => state.user?.id);
+
+    const handleDelete = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        try {
+            await axios.delete(`/posts/${post.id}`, { withCredentials: true });
+            window.location.reload();
+        } catch (err) {
+            console.error("Failed to delete post:", err);
+        }
+    };
 
     const toggleLike = async () => {
         try {
             if (isLiked) {
-                await axios.delete(`/posts/${post.id}/like`, { withCredentials: true });
+                await axios.delete(`/likes/${post.id}`, { withCredentials: true });
                 setLikes(prev => prev - 1);
             } else {
-                await axios.post(`/posts/${post.id}/like`, { withCredentials: true });
+                await axios.post(`/likes/${post.id}`, { withCredentials: true });
                 setLikes(prev => prev + 1);
             }
             setLiked(!isLiked);
@@ -61,6 +79,7 @@ const Post: React.FC<{ post: PostProps, profile: ProfileProps }> = ({ post, prof
             );
             setReplyContent("");
             setReplyOpen(false);
+            onReplySuccess?.();
         } catch (err) {
             console.error("Failed to post reply:", err);
         }
@@ -78,7 +97,11 @@ const Post: React.FC<{ post: PostProps, profile: ProfileProps }> = ({ post, prof
                 <img
                     src={profile.avatarUrl || "https://placehold.co/48x48"}
                     alt="avatar"
-                    className="w-12 h-12 rounded-full object-cover"
+                    className="w-12 h-12 rounded-full object-cover cursor-pointer"
+                    onClick={(e) => {
+                        e.stopPropagation(); // Prevent post navigation
+                        navigate(`/profile/${profile.id}`);
+                    }}
                 />
 
                 <div className="flex-1">
@@ -129,6 +152,26 @@ const Post: React.FC<{ post: PostProps, profile: ProfileProps }> = ({ post, prof
                         >
                             <FaComment className="text-blue-400" />
                         </button>
+
+                        {(() => {
+                            console.log("post ", JSON.stringify(profile));
+                            console.log("post.profileId:", profile.id);
+                            console.log("currentUserId:", currentUserId);
+
+                            if (profile.id === currentUserId) {
+                                return (
+                                    <button
+                                        onClick={handleDelete}
+                                        className="flex items-center space-x-1 px-3 py-1 rounded bg-red-800 hover:bg-red-700 text-sm text-white"
+                                    >
+                                        <span>Delete</span>
+                                    </button>
+                                );
+                            }
+
+                            return null;
+                        })()}
+
                         <ReplyModal
                             open={replyOpen}
                             onClose={() => setReplyOpen(false)}

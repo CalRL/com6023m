@@ -3,27 +3,45 @@ import database from '../config/database.js';
 class LikeService {
     /**
      * Adds a like to a post by id
+     * also add to the posts like_count
      * @param profileId
      * @param postId
      */
     async addLike(profileId: number, postId: number) {
-        return database`
-      INSERT INTO likes (profile_id, post_id)
-      VALUES (${profileId}, ${postId})
-      ON CONFLICT (profile_id, post_id) DO NOTHING
-    `;
+        await database.begin(async (sql) => {
+            await sql`
+            INSERT INTO likes (profile_id, post_id)
+            VALUES (${profileId}, ${postId})
+            ON CONFLICT (profile_id, post_id) DO NOTHING
+        `;
+
+            await sql`
+            UPDATE posts
+            SET like_count = like_count + 1
+            WHERE id = ${postId}
+        `;
+        });
     }
 
     /**
      * Remove a like from a post by id
+     * also remove from the posts like_count
      * @param profileId
      * @param postId
      */
     async removeLike(profileId: number, postId: number) {
-        return database`
-      DELETE FROM likes
-      WHERE profile_id = ${profileId} AND post_id = ${postId}
-    `;
+        await database.begin(async (sql) => {
+            await sql`
+            DELETE FROM likes
+            WHERE profile_id = ${profileId} AND post_id = ${postId}
+        `;
+
+            await sql`
+            UPDATE posts
+            SET like_count = GREATEST(like_count - 1, 0)
+            WHERE id = ${postId}
+        `;
+        });
     }
 
     /**
@@ -33,10 +51,10 @@ class LikeService {
      */
     async isPostLiked(profileId: number, postId: number) {
         const result = await database`
-      SELECT 1 FROM likes
-      WHERE profile_id = ${profileId} AND post_id = ${postId}
-      LIMIT 1
-    `;
+          SELECT 1 FROM likes
+          WHERE profile_id = ${profileId} AND post_id = ${postId}
+          LIMIT 1
+        `;
         return result.length > 0;
     }
 

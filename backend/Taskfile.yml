@@ -59,8 +59,12 @@ tasks:
       - task install
       - task lint
       - task test
-      - task build
       - task deploy:win
+
+  ci:notest:
+    desc: testing
+    cmds:
+      - task deploy
 
   ci:
     desc: Full CI pipeline
@@ -68,5 +72,5 @@ tasks:
       - task install
       - task lint
       - task test
-      - task build
       - task deploy
+

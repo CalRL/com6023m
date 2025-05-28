@@ -94,6 +94,12 @@ export class UserService {
     }
   }
 
+  /**
+   * Retrieves the username for a given user ID.
+   *
+   * @param {number} id - The user's ID.
+   * @returns {Promise<{ username: string } | undefined>} - The username or undefined if not found.
+   */
   async getUsername(id: number) {
     try {
       const result = await database`
@@ -124,9 +130,6 @@ export class UserService {
   /**
    * Updates an existing user by ID.
    *
-   * TODO: make this safe
-   * TODO: can postgres do partial updates?
-   *
    * @param {number} id - The ID of the user to update.
    * @param {Partial<User>} userDTO - The fields to update.
    * @returns {Promise<UserDTO | null>} - The updated user if successful, otherwise null.
@@ -148,37 +151,77 @@ export class UserService {
     };
 
     const result = await database`
-    UPDATE users
-    SET
-      first_name = ${updatedUser.first_name ?? null},
-      last_name = ${updatedUser.last_name ?? null},
-      email = ${updatedUser.email ?? null},
-      phone_ext = ${updatedUser.phone_ext ?? null},
-      phone_number = ${updatedUser.phone_number ?? null},
-      birthday = ${updatedUser.birthday ?? null}
-    WHERE id = ${id}
-    RETURNING *
-  `;
+      UPDATE users
+      SET
+        first_name = ${updatedUser.first_name ?? null},
+        last_name = ${updatedUser.last_name ?? null},
+        email = ${updatedUser.email ?? null},
+        phone_ext = ${updatedUser.phone_ext ?? null},
+        phone_number = ${updatedUser.phone_number ?? null},
+        birthday = ${updatedUser.birthday ?? null}
+      WHERE id = ${id}
+      RETURNING *
+    `;
 
     return result[0] as UserDTO || null;
   }
 
   /**
-   * Deletes a user by ID.
+   * Deletes a user and all associated data, including:
+   * - likes and bookmarks made by the user
+   * - their posts, profile, and permissions
+   *
+   * After deleting likes/bookmarks, the method also recalculates and updates
+   * `like_count` and `bookmark_count` for all posts to maintain data consistency.
+   *
+   * This method assumes foreign keys with `ON DELETE CASCADE` are not used for counts,
+   * so manual cleanup and count updates are required.
+   *
    * @param {number} id - The ID of the user to delete.
-   * @returns {Promise<boolean>} - True if the user was deleted, false otherwise.
+   * @returns {Promise<boolean>} - Returns true if the user was deleted successfully.
+   * @throws {Error} - If any step of the deletion or update fails.
    */
   async deleteById(id: number): Promise<boolean> {
+    const db = database;
+
     try {
-      const result = await database`
-          DELETE FROM users WHERE id = ${id};
-        `;
+      // Step 1: Delete likes/bookmarks
+      await db`DELETE FROM likes WHERE profile_id IN (SELECT id FROM profiles WHERE id = ${id})`;
+      await db`DELETE FROM bookmarks WHERE profile_id = ${id}`;
+
+      // Step 2: Recalculate counts
+      await db`
+        UPDATE posts SET like_count = (
+          SELECT COUNT(*) FROM likes WHERE likes.post_id = posts.id
+        )
+      `;
+
+      await db`
+        UPDATE posts SET bookmark_count = (
+          SELECT COUNT(*) FROM bookmarks WHERE bookmarks.post_id = posts.id
+        )
+      `;
+
+      // Step 3: Delete posts, permissions, profiles
+      await db`DELETE FROM posts WHERE profile_id IN (SELECT id FROM profiles WHERE id = ${id})`;
+      await db`DELETE FROM permissions WHERE user_id = ${id}`;
+      await db`DELETE FROM profiles WHERE id = ${id}`;
+
+      // Step 4: Delete the user
+      const result = await db`DELETE FROM users WHERE id = ${id}`;
       return result.count > 0;
     } catch (error) {
-      throw new Error((error as Error).message);
+      console.error('[UserService.deleteById] Failed to fully delete user:', error);
+      throw new Error('Failed to delete user and associated data');
     }
   }
 
+  /**
+   * Finds a user by their email address.
+   *
+   * @param {string} email - The user's email.
+   * @returns {Promise<UserDTO | undefined>} - The user DTO or undefined.
+   */
   async findByEmail(email: string): Promise<UserDTO | undefined> {
     try {
       const result = await database<UserDTO[]>`
@@ -190,6 +233,14 @@ export class UserService {
     }
   }
 
+  /**
+   * Retrieves specific fields for a user safely.
+   *
+   * @param {number} userId - The user's ID.
+   * @param {Record<string, boolean>} fields - A map of fields requested.
+   * @returns {Promise<Record<string, any> | null>} - The selected fields or null.
+   * @throws {Error} - If field names are invalid or disallowed.
+   */
   async getFields(userId: number, fields: Record<string, boolean>) {
     // Extract field names from the input object
     const fieldNames = Object.keys(fields);
@@ -239,6 +290,14 @@ export class UserService {
       return result[0] || null;
   }
 
+  /**
+   * Updates only allowed user fields using a key-value map.
+   *
+   * @param {number} userId - The ID of the user.
+   * @param {Record<string, any>} fields - The fields to update.
+   * @returns {Promise<UserDTO | null>} - The updated user, or null if no result.
+   * @throws {Error} - If all fields are disallowed.
+   */
   async updateFields(userId: number, fields: Record<string, any>) {
     const disallowedFields = ['password_hash', 'email', 'id'];
 
@@ -259,9 +318,68 @@ export class UserService {
     return result[0] || null;
   }
 
+  /**
+   * Sanitizes raw user field input for update, ensuring values are valid and safe.
+   *
+   * @param {Record<string, any>} fields - The raw fields to sanitize.
+   * @returns {Promise<Record<string, any>>} - The sanitized field set.
+   */
+  async sanitizeFields(fields: Record<string, any>): Promise<Record<string, any>> {
+    const sanitized: Record<string, any> = {};
+
+    const isEmpty = (val: any) =>
+        val === undefined || val === null || (typeof val === 'string' && val.trim() === '');
+
+    if ('first_name' in fields && !isEmpty(fields.first_name)) {
+      sanitized.first_name = fields.first_name.trim();
+    }
+
+    if ('last_name' in fields && !isEmpty(fields.last_name)) {
+      sanitized.last_name = fields.last_name.trim();
+    }
+
+    if ('phone_ext' in fields && !isEmpty(fields.phone_ext)) {
+      const num = Number(fields.phone_ext);
+      if (!isNaN(num)) sanitized.phone_ext = num;
+    }
+
+    if ('phone_number' in fields && !isEmpty(fields.phone_number)) {
+      sanitized.phone_number = fields.phone_number.trim();
+    }
+
+    if ('birthday' in fields && !isEmpty(fields.birthday)) {
+      const date = new Date(fields.birthday);
+      if (!isNaN(date.getTime())) {
+        sanitized.birthday = date.toISOString().split('T')[0];
+      }
+    }
+
+    return sanitized;
+  }
+
+  /**
+   * Updates a user's password securely with a new password hash.
+   *
+   * @param {number} userId - The ID of the user.
+   * @param {string} passwordHash - The hashed password to store.
+   * @returns {Promise<boolean>} - True if the update succeeded.
+   * @throws {Error} - If the database update fails.
+   */
+  async updatePassword(userId: number, passwordHash: string): Promise<boolean> {
+    try {
+      await database`
+        UPDATE users
+        SET password_hash = ${passwordHash}
+        WHERE id = ${userId}
+      `;
+      return true;
+    } catch (error) {
+      console.error('[UserService.updatePassword] Failed:', error);
+      throw new Error('Failed to update password');
+    }
+  }
 
 
 }
 
-// Export an instance of UserService for reuse
 export const userService = new UserService();

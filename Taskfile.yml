@@ -1,0 +1,15 @@
+version: '3'
+
+tasks:
+  db:volume:backup:
+    desc: Run one-off volume backup (with sudo)
+    cmds:
+      - sudo bash ./backup_docker.sh
+
+  db:volume:cron:install:
+    desc: Install cron job to back up Docker volume every 30 minutes
+    cmds:
+      - |
+        echo "Installing cron job..."
+        (crontab -l 2>/dev/null | grep -F './backup_docker.sh') && echo "Cron job already exists." || \
+        (crontab -l 2>/dev/null; echo "*/30 * * * * cd $(pwd) && ./backup_docker.sh") | crontab -

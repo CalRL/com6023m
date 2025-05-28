@@ -42,7 +42,6 @@ class PostsController {
         return res.status(201).json({createdPost});
 
     }
-    async updatePost(req: Request, res: Response) {}
     async deletePost(req: Request, res: Response) {
         const user = await authService.fromRequest(req, res);
         if(!user || !user.id) {
@@ -226,40 +225,6 @@ class PostsController {
             console.error('Error fetching posts:', err);
             res.status(500).json({ error: 'Failed to fetch posts' });
         }
-    }
-
-    async addLike(req: Request, res: Response) {
-        try {
-            const user = await authMiddleware.checkUserPermission(req, res, Permissions.LIKE_POST);
-
-            const postId = parseInt(req.params.id);
-            const profileId = user.id;
-
-            await postsService.addLike(profileId!, postId);
-            res.status(200).json({ message: 'Post liked' });
-        } catch (err) {
-            // Do nothing — response already sent in helper
-        }
-
-
-    }
-
-    async deleteLike(req: Request, res: Response) {
-        const user = await authMiddleware.checkUserPermission(req, res, Permissions.LIKE_POST);
-
-        const postId = parseInt(req.params.id);
-        const profileId = user.id;
-
-        await postsService.removeLike(profileId!, postId);
-        res.status(200).json({ message: 'Post unliked' });
-    }
-
-    async hasLiked(req: Request, res: Response) {
-        const user = await authMiddleware.checkUserPermission(req, res, Permissions.LIKE_POST);
-
-        const result = await postsService.hasLiked(user.id, parseInt(req.params.id));
-
-        res.status(200).json({ liked: result });
     }
 }
 

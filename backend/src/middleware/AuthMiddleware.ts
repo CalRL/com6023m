@@ -91,13 +91,13 @@ class AuthMiddleware {
         req: Request,
         res: Response,
         permission: Permissions
-    ): Promise<UserDTO> {
+    ): Promise<UserDTO | null> {
         const user = await authService.fromRequest(req, res);
         debugMode.log('AuthMiddleware: ' + JSON.stringify(user));
 
         if (!user || user.id === undefined) {
             res.status(401).json({ message: 'User Not Found' });
-            throw new Error('Unauthorized');
+            return null;
         }
 
         const hasPermission = await permissionsService.hasPermission(user.id, permission);
@@ -105,7 +105,7 @@ class AuthMiddleware {
 
         if (!hasPermission) {
             res.status(403).json({ message: 'Forbidden' });
-            throw new Error('Forbidden');
+            return null;
         }
 
         return user;

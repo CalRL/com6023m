@@ -9,9 +9,6 @@ router.get('/status', authMiddleware.tokenMiddleware, asyncHandler(postsControll
 router.put('/status', authMiddleware.tokenMiddleware, asyncHandler(postsController.updateStatus));
 
 router.get('/:id/replies', authMiddleware.tokenMiddleware, asyncHandler(postsController.getPostReplies));
-router.get('/:id/liked', authMiddleware.tokenMiddleware, asyncHandler(postsController.hasLiked));
-router.post('/:id/like', authMiddleware.tokenMiddleware, asyncHandler(postsController.addLike));
-router.delete('/:id/like', authMiddleware.tokenMiddleware, asyncHandler(postsController.deleteLike));
 
 router.get('/', authMiddleware.tokenMiddleware, asyncHandler(postsController.getLatestPosts));
 router.post('/', authMiddleware.tokenMiddleware, asyncHandler(postsController.createPost));

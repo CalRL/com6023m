@@ -9,16 +9,12 @@ import { Permissions } from '../User/Permissions.js';
 import blacklistService from '../services/BlacklistService.js';
 
 import {authService} from '../services/AuthService.js';
+import authMiddleware from "../middleware/AuthMiddleware.js";
+import {hashPassword, verifyPassword} from "../utils/PasswordUtils.js";
 
 
 class UserController {
     /**
-     * {
-     *     "user": {
-     *         "email": "",
-     *         "password": ""
-     *     }
-     * }
      * @param req
      * @param res
      */
@@ -43,41 +39,38 @@ class UserController {
     }
 
     /**
-     *
-     * TODO: Logic
-     * I'm thinking having a standardized system like,
-     * {
-     *     "id": number
-     *     "user": {
-     *         userdatahere
-     *     }
-     * }
-     *
-     * then check the userid,
+     * check the userid,
      * if its the same as the person who made the request,
      * check permission SELF_UPDATE,
      * else check for UPDATE_OTHER,
      * then offload the logic to the UserService.
      *
-     * TODO: represent data object with a interface?
-     * TODO: check permissions
      *
      * @param req
      * @param res
      */
     async updateUser(req: Request, res: Response): Promise<Response> {
         try {
-            const { id } = req.params;
-            const user: UserDTO = req.body;
-            console.log('User: ' + JSON.stringify(user));
+            const requester = await authService.fromRequest(req, res);
 
-            const parsedId = parseInt(id);
+            const id  = parseInt(req.params.id);
 
-            if(!user) {
+            const isSelf = requester.id === id;
+            const isAdmin = await permissionsService.hasPermission(id, Permissions.ADMIN);
+            if (!isSelf && !isAdmin) {
+                return res.status(403).json({ success: false, message: 'Forbidden: Not authorized' });
+            }
+
+
+            const userDTO: UserDTO = req.body;
+            console.log('User: ' + JSON.stringify(userDTO));
+
+
+            if(!userDTO) {
                 return res.status(422).json({ error: 'User format invalid' });
             }
 
-            const updatedUser = await userService.update(parsedId, user);
+            const updatedUser = await userService.update(id, userDTO);
 
             if (!updatedUser) {
                 return res.status(404).json({ error: 'User not found' });
@@ -270,7 +263,16 @@ class UserController {
 
     async getFields(req: Request, res: Response): Promise<Response> {
         try {
+            const requester = await authService.fromRequest(req, res);
+
             const userId = parseInt(req.params.id);
+
+            const isSelf = requester.id === userId;
+            const isAdmin = await permissionsService.hasPermission(userId, Permissions.ADMIN);
+            if (!isSelf && !isAdmin) {
+                return res.status(403).json({ success: false, message: 'Forbidden: Not authorized' });
+            }
+
 
             if (isNaN(userId)) {
                 return res.status(400).json({
@@ -283,7 +285,24 @@ class UserController {
             const { fields } = req.body;
             debugMode.log('Fields:' + JSON.stringify(fields));
             // Use the UserService to get the fields
-            const userData = await userService.getFields(userId, fields);
+
+            const allowedFields = ['first_name', 'last_name', 'phone_ext', 'phone_number', 'birthday'];
+            const filteredFields: Record<string, any> = {};
+
+            for (const [key, value] of Object.entries(fields)) {
+                if (allowedFields.includes(key)) {
+                    filteredFields[key] = value;
+                }
+            }
+
+            if (Object.keys(filteredFields).length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'No valid fields provided for update'
+                });
+            }
+
+            const userData = await userService.getFields(userId, filteredFields);
 
             if (!userData) {
                 return res.status(404).json({
@@ -308,7 +327,15 @@ class UserController {
 
     async updateFields(req: Request, res: Response): Promise<Response> {
         try {
+            const requester = await authService.fromRequest(req, res);
+
             const userId = parseInt(req.params.id);
+
+            const isSelf = requester.id === userId;
+            const isAdmin = await permissionsService.hasPermission(userId, Permissions.ADMIN);
+            if (!isSelf && !isAdmin) {
+                return res.status(403).json({ success: false, message: 'Forbidden: Not authorized' });
+            }
 
             if (isNaN(userId)) {
                 return res.status(400).json({
@@ -336,14 +363,13 @@ class UserController {
                 }
             }
 
-            if (Object.keys(filteredFields).length === 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'No valid fields provided for update'
-                });
+            const sanitized = await userService.sanitizeFields(fields);
+
+            if (Object.keys(sanitized).length === 0) {
+                return res.status(400).json({ success: false, message: 'No valid fields provided for update' });
             }
 
-            await userService.updateFields(userId, filteredFields);
+            await userService.updateFields(userId, sanitized);
 
             return res.status(200).json({
                 success: true,
@@ -357,6 +383,60 @@ class UserController {
                 error: (error as Error).message
             });
         }
+    }
+
+    /**
+     * Handles authenticated password changes.
+     *
+     * Verifies the current password, ensures new passwords match,
+     * updates the password hash in the database, clears the user's refresh cookie,
+     * and blacklists the current access token to force re-authentication.
+     *
+     * @param {Request} req - Express request object containing current, new, and confirmation passwords in the body.
+     * @param {Response} res - Express response object for sending status and result messages.
+     * @returns {Promise<Response>} - A 200 response on success, or appropriate error responses.
+     */
+    async changePassword(req: Request, res: Response): Promise<Response> {
+        const { currentPassword, newPassword, confirmPassword } = req.body;
+        const user = await authService.fromRequest(req, res);
+
+        if (!user) return res.status(401).json({ message: 'Unauthorized' });
+
+        const userDTO = await userService.findById(user.id);
+        if(!userDTO) {
+            return res.status(401).json({ message: 'Achievement Unlocked: How did we get here?' });
+        }
+
+        if (!userDTO?.password_hash) {
+            console.error('[changePassword] No password_hash found for user:', user.id);
+            return res.status(500).json({ message: 'Password record missing. Cannot verify.' });
+        }
+
+        console.log(`${JSON.stringify(userDTO.password_hash )}, current: ${currentPassword}`);
+        const isValid = await verifyPassword(currentPassword, userDTO.password_hash);
+        if (!isValid) return res.status(400).json({ message: 'Current password is incorrect' });
+
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({ message: 'New passwords do not match' });
+        }
+
+        // hash and save password
+        const hash = await hashPassword(newPassword);
+        await userService.updatePassword(user.id, hash);
+
+        // blacklist token
+        const token = req.headers.authorization?.split(' ')[1];
+        if (token) {
+            await blacklistService.add(token);
+        }
+
+        res.clearCookie('refreshToken', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'strict',
+        });
+
+        return res.status(200).json({ message: 'Password updated successfully' });
     }
 }
 

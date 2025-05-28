@@ -15,6 +15,8 @@ import HomePage from './pages/HomePage';
 import BookmarksPage from "./pages/BooksmarksPage";
 import PostThreadPage from "./pages/PostThreadPage.tsx";
 import {RefreshProvider} from "./components/context/RefreshContext.tsx";
+import AdminPage from "./pages/AdminPage.tsx";
+import Settings from "./components/Settings.tsx";
 
 const App: React.FC = () => {
     const initializeAuth = useAuthStore((state) => state.initializeAuth);
@@ -54,6 +56,8 @@ const App: React.FC = () => {
                                 <Route path="/bookmarks" element={<BookmarksPage />} />
                                 <Route path="/profile/:id?" element={<ProfileRouter />} />
                                 <Route path="/posts/:postId" element={<PostThreadPage />} />
+                                <Route path="/admin" element={<AdminPage />} />
+                                <Route path="/settings" element={<Settings />} />
                             </Route>
                         </Routes>
                     </div>

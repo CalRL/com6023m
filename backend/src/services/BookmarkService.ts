@@ -24,11 +24,11 @@ class BookmarkService {
     async addBookmark(profileId: number, postId: number) {
         await database.begin(async (sql) => {
             const result = await sql`
-      INSERT INTO bookmarks (profile_id, post_id)
-      VALUES (${profileId}, ${postId})
-      ON CONFLICT DO NOTHING
-      RETURNING *
-    `;
+          INSERT INTO bookmarks (profile_id, post_id)
+          VALUES (${profileId}, ${postId})
+          ON CONFLICT DO NOTHING
+          RETURNING *
+        `;
 
             if (result.length > 0) {
                 // Insert happened → safe to increment

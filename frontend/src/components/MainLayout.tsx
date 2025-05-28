@@ -10,6 +10,7 @@ export default function MainLayout() {
     const [postModalOpen, setPostModalOpen] = useState(false);
     const [content, setContent] = useState("");
     const [refreshPostsCallback, setRefreshPostsCallback] = useState<(() => void) | null>(null);
+    const [refreshRepliesCallback, setRefreshRepliesCallback] = useState<(() => void) | null>(null);
 
     const handlePost = async (text: string) => {
         if (!text.trim()) return;
@@ -38,6 +39,8 @@ export default function MainLayout() {
                     <Link to="/" className="block p-2 rounded hover:bg-gray-700 transition">🏠 Home</Link>
                     <Link to="/bookmarks" className="block p-2 rounded hover:bg-gray-700 transition">🔖 Bookmarks</Link>
                     <Link to="/profile" className="block p-2 rounded hover:bg-gray-700 transition">👤 Profile</Link>
+                    <Link to={"/settings"} className="block p-2 rounded hover:bg-gray-700 transition">⚙️ User Settings</Link>
+                    <Link to="/admin" className="block p-2 rounded hover:bg-gray-700 transition">🔧 Admin</Link>
 
                     <button
                         onClick={() => setPostModalOpen(true)}
@@ -52,7 +55,12 @@ export default function MainLayout() {
 
             {/* Middle */}
             <main className="flex-1 border-r border-gray-800 p-4 overflow-y-auto h-full">
-                <Outlet context={{ setRefreshPostsCallback }} />
+                <Outlet context={{
+                    setRefreshPostsCallback,
+                    refreshPostsCallback,
+                    setRefreshRepliesCallback,
+                    refreshRepliesCallback
+                }} />
             </main>
 
             {/* Right */}

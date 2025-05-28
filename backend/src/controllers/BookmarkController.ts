@@ -1,12 +1,23 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import {authService} from '../services/AuthService.js';
-import authMiddleware, {fromToken} from '../middleware/AuthMiddleware.js';
-import {debugMode} from '../utils/DebugMode.js';
 import bookmarkService from '../services/BookmarkService.js';
 import likeService from '../services/LikeService.js';
 import {profileService} from '../services/ProfileService.js';
 
+/**
+ * Controller for handling bookmark-related operations such as fetching,
+ * adding, removing bookmarks and checking their status or count.
+ */
 class BookmarkController {
+
+    /**
+     * Retrieves a list of bookmarked posts for the authenticated user.
+     * Includes like/bookmark status and profile data for each post.
+     *
+     * @param {Request} req - Express request object.
+     * @param {Response} res - Express response object.
+     * @returns {Promise<Response>} List of enriched bookmarked posts.
+     */
     async getUserBookmarks(req: Request, res: Response) {
         const user = await authService.fromRequest(req, res);
         if (!user?.id) {
@@ -27,15 +38,16 @@ class BookmarkController {
 
             const bookmarks = await Promise.all(
                 rawBookmarks.map(async (post) => {
-                    const [liked, bookmarked, bookmark_count, profile] = await Promise.all([
+                    const [liked, bookmarked, bookmark_count, like_count, profile] = await Promise.all([
                         likeService.isPostLiked(user.id, post.id),
                         bookmarkService.isPostBookmarked(user.id, post.id),
                         bookmarkService.getBookmarkCount(post.id),
+                        likeService.getLikeCount(post.id),
                         profileService.getProfileById(post.profile_id)
                     ]);
 
                     if(!profile) {
-                        return res.status(401).json({ message: 'Bookmark not found' });
+                        throw new Error(`Profile not found for post ${post.id}`);
                     }
 
                     return {
@@ -44,7 +56,7 @@ class BookmarkController {
                             content: post.content,
                             mediaUrl: post.media_url,
                             createdAt: post.created_at,
-                            likeCount: post.like_count ?? 0,
+                            likeCount: like_count ?? 0,
                             bookmarkCount: bookmark_count ?? 0,
                             liked,
                             bookmarked
@@ -54,13 +66,20 @@ class BookmarkController {
                 })
             );
 
-            res.status(200).json({ bookmarks });
+            res.status(200).json({ bookmarks: bookmarks.filter(Boolean) });
         } catch (err) {
             console.error('Get bookmarks error:', err);
             res.status(500).json({ error: 'Failed to get bookmarks' });
         }
     }
 
+    /**
+     * Adds a bookmark for a specific post for the authenticated user.
+     *
+     * @param {Request} req - Express request object.
+     * @param {Response} res - Express response object.
+     * @returns {Promise<Response>} Confirmation of bookmark addition.
+     */
     async addBookmark(req: Request, res: Response) {
         const user = await authService.fromRequest(req, res);
         if (!user?.id) {
@@ -78,6 +97,13 @@ class BookmarkController {
         }
     }
 
+    /**
+     * Removes a bookmark for a specific post for the authenticated user.
+     *
+     * @param {Request} req - Express request object.
+     * @param {Response} res - Express response object.
+     * @returns {Promise<Response>} Confirmation of bookmark removal.
+     */
     async removeBookmark(req: Request, res: Response) {
         const user = await authService.fromRequest(req, res);
         if (!user?.id) {
@@ -95,6 +121,13 @@ class BookmarkController {
         }
     }
 
+    /**
+     * Checks if a specific post is bookmarked by the authenticated user
+     *
+     * @param {Request} req - Express request object.
+     * @param {Response} res - Express response object.
+     * @returns {Promise<Response>} Boolean indicating bookmark status.
+     */
     async isBookmarked(req: Request, res: Response) {
         const user = await authService.fromRequest(req, res);
         if (!user?.id) {
@@ -112,6 +145,13 @@ class BookmarkController {
         }
     }
 
+    /**
+     * Retrieves the total number of bookmarks for a given post.
+     *
+     * @param {Request} req - Express request object.
+     * @param {Response} res - Express response object.
+     * @returns {Promise<Response>} Number of bookmarks on the post.
+     */
     async getBookmarkCount(req: Request, res: Response) {
         const user = await authService.fromRequest(req, res);
         if (!user?.id) {

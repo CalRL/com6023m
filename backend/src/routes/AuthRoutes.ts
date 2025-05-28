@@ -1,6 +1,5 @@
 import express from 'express';
 import authController, { registerController, loginController } from '../controllers/AuthController.js';
-import {authService} from '../services/AuthService.js';
 import {asyncHandler} from '../utils/asyncHandler.js';
 const router = express.Router();
 
@@ -20,5 +19,6 @@ router.post('/login', loginController);
 router.post('/logout', asyncHandler(authController.logout));
 router.post('/refresh', asyncHandler(authController.refresh));
 router.get('/check', asyncHandler(authController.check));
+
 
 export default router;
