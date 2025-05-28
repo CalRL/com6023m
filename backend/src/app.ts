@@ -17,7 +17,7 @@ import cors from 'cors';
 import {debugMode} from './utils/DebugMode.js';
 import bookmarkRoutes from './routes/BookmarkRoutes.js';
 import likeRoutes from './routes/LikeRoutes.js';
-import adminRoutes from "./routes/AdminRoutes.js";
+import adminRoutes from './routes/AdminRoutes.js';
 
 // THis will run only if DEBUG_MODE is set to true in ENV
 debugMode.log('Running in debug mode!');

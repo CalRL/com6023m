@@ -9,8 +9,8 @@ import { Permissions } from '../User/Permissions.js';
 import blacklistService from '../services/BlacklistService.js';
 
 import {authService} from '../services/AuthService.js';
-import authMiddleware from "../middleware/AuthMiddleware.js";
-import {hashPassword, verifyPassword} from "../utils/PasswordUtils.js";
+import authMiddleware from '../middleware/AuthMiddleware.js';
+import {hashPassword, verifyPassword} from '../utils/PasswordUtils.js';
 
 
 class UserController {
@@ -84,9 +84,7 @@ class UserController {
     }
 
     /**
-     * Check user is self or admin
-     * todo: make it chek req res
-     * todo: check perms
+     * Delete user by id
      * @param req
      * @param res
      */

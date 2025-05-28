@@ -2,7 +2,7 @@ import express, {Router} from 'express';
 import { userController } from '../controllers/UserController.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import authMiddleware, {tokenMiddleware} from '../middleware/AuthMiddleware.js';
-import authController from "../controllers/AuthController.js";
+import authController from '../controllers/AuthController.js';
 
 const router: Router = express.Router();
 

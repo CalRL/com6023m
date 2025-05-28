@@ -138,33 +138,66 @@ describe('UserController', () => {
     });
 
     describe('UserController', () => {
+        
         afterEach(() => vi.restoreAllMocks());
 
         describe('updateUser', () => {
+            beforeEach(() => {
+                // Mock requester globally for these tests
+                (authService.fromRequest as any).mockResolvedValue({ id: 1 });
+            });
+
             it('should update a user and return 200', async () => {
-                const req = {params: {id: '1'}, body: {email: 'new@example.com'}} as unknown as Request;
+                const req = {
+                    params: { id: '1' },
+                    body: { email: 'new@example.com' }
+                } as unknown as Request;
+
                 const res = mockRes();
+
+                (permissionsService.hasPermission as any).mockResolvedValue(false);
                 (userService.update as any).mockResolvedValue({ id: 1, email: 'new@example.com' });
 
                 await userController.updateUser(req, res);
+
                 expect(res.status).toHaveBeenCalledWith(200);
+                expect(res.json).toHaveBeenCalledWith({
+                    message: 'User updated successfully',
+                    updatedUser: { id: 1, email: 'new@example.com' }
+                });
             });
 
             it('should return 422 for invalid user format', async () => {
-                const req = { params: { id: '1' }, body: null } as unknown as Request;
+                const req = {
+                    params: { id: '1' },
+                    body: null
+                } as unknown as Request;
+
                 const res = mockRes();
 
+                (permissionsService.hasPermission as any).mockResolvedValue(false);
+
                 await userController.updateUser(req, res);
+
                 expect(res.status).toHaveBeenCalledWith(422);
+                expect(res.json).toHaveBeenCalledWith({ error: 'User format invalid' });
             });
 
             it('should return 404 if user not found', async () => {
-                const req = {params: {id: '1'}, body: {email: 'fail@example.com'}} as unknown as Request;
+                const req = {
+                    params: { id: '1' },
+                    body: { email: 'notfound@example.com' }
+                } as unknown as Request;
+
                 const res = mockRes();
-                (userService.update as any).mockResolvedValue(null);
+
+                (permissionsService.hasPermission as any).mockResolvedValue(false);
+                (userService.update as any).mockResolvedValue(null); // Simulate user not found
 
                 await userController.updateUser(req, res);
+
                 expect(res.status).toHaveBeenCalledWith(404);
+                expect(res.json).toHaveBeenCalledWith({ error: 'User not found' });
             });
         });
 
