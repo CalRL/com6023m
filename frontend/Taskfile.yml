@@ -1,6 +1,10 @@
 version: '3'
 
 tasks:
+  install:
+    desc: Install dependencices
+    cmds:
+      - npm i
   lint:
     desc: Lint the frontend
     cmds:
@@ -46,6 +50,7 @@ tasks:
   ci:windows:
     desc: CI pipeline for Windows
     cmds:
+      - task install
       - task lint
       - task test
       - task deploy:windows
@@ -53,6 +58,7 @@ tasks:
   ci:
     desc: CI pipeline
     cmds:
+      - task install
       - task lint
       - task test
       - task deploy
